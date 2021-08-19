@@ -44,6 +44,10 @@ div {
   background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
 }
 
+#render .wh {
+  z-index: 1;
+}
+
 /* Finde estilos globales */
 
 /* Para los estilos del meteoro */
@@ -67,3 +71,42 @@ meteor.an {
   }
 }
 /* Fin de los estilos del meteoro */
+
+/* Estilos para la base */
+board {
+  background: #005f81;
+  border-radius: 10px;
+  box-shadow: inset 0px 0px 8px 2px #6fc6e1;
+}
+
+/* hole {
+  width: 80px;
+  height: 50px;
+  margin: 10px;
+  border: solid 1px red;
+  border-radius: 10px;
+  background-color: gray;
+} */
+
+/* Fin estilos de la base */
+
+/*
+https://www.quackit.com/css/codes/patterns/circular_background_patterns.cfm
+<style scoped>
+.pattern {
+	height:400px;
+	width:400px;
+ }
+
+#circular1 {
+background-color:#ccc;
+background-image: radial-gradient(#eee 40%, transparent 40%),
+radial-gradient(#eee 40%, transparent 40%);
+background-size: 10% 10%;
+background-position: 20px 50px, 40px 40px;
+}
+</style>
+
+<div id="circular1" class="pattern">
+</div>
+*/

@@ -6,8 +6,10 @@
   const $$ = document.querySelectorAll.bind(document);
   const BASE_HEIGHT = 732;
   const BASE_WIDTH = 412;
+  const METEOR_SIZE = 50;
   $("html").style.cssText += `--h: ${BASE_HEIGHT}px; --w: ${BASE_WIDTH}px`;
   const setHtml = (element, html) => (element.innerHTML = html);
+  const ObjectKeys = (obj) => Object.keys(obj);
 
   /**
    * Para edicioar eventos
@@ -78,6 +80,11 @@
     }
   };
 
+  const inlineStyles = (styles) =>
+    `style='${ObjectKeys(styles)
+      .map((v) => `${v}:${styles[v]}`)
+      .join(";")}'`;
+
   /**
    * Para establecer un tiempo para hacer una acción en una función
    * útil para el evento de resize
@@ -121,28 +128,49 @@
    * @param {*} animated
    * @returns
    */
-  const Meteor = (
-    size = 20,
-    color = "g",
+  const Meteor = ({
+    size = METEOR_SIZE,
+    c = "g",
     left = 0,
     top = 0,
-    animated = false
-  ) =>
-    `<meteor class='${color} ${
-      animated ? "an" : ""
-    }' style='width:${size}px;height:${size}px;left:${left}px;top:${top}px'></meteor>`;
+    id = "",
+    an = false,
+  }) =>
+    `<meteor ${id ? `id=${id} ` : ""}class='${c} ${
+      an ? "an" : ""
+    }' ${inlineStyles({
+      width: `${size}px`,
+      height: `${size}px`,
+      left: `${left}px`,
+      top: `${top}px`,
+    })}></meteor>`;
+
+  /**
+   * Renderiza el board base del juego
+   * @returns
+   */
+  const Board = () =>
+    `<board ${inlineStyles({
+      width: `${METEOR_SIZE * 7}px`,
+      height: `${METEOR_SIZE * 6}px`,
+      "-webkit-mask-image": `radial-gradient(transparent 50%, #fff 50%)`,
+      "-webkit-mask-size": `${METEOR_SIZE}px ${METEOR_SIZE}px`,
+      "-webkit-mask-position": `${METEOR_SIZE}px ${METEOR_SIZE}px`,
+    })}></board>`;
 
   const Game = () => {
     setHtml(
       $("#render"),
-      `<div>Y este es el juego<br><button>Lobby</button></div>`
+      `<div class='wh cs'>
+      ${Board()}
+      </div>`
     );
 
     // Agregar los eventos
-    $on($("button"), "click", () => {
-      console.log("Var al Lobby");
-      App("Lobby");
-    });
+    // $on($("button"), "click", () => {
+    //   console.log("Var al Lobby");
+    //   App("Lobby");
+    // });
   };
 
   const Lobby = () => {
@@ -188,7 +216,7 @@
     },
   };
 
-  const customStyle = Object.keys(meteorColors)
+  const customStyle = ObjectKeys(meteorColors)
     .map(
       (m) => `
       meteor.${m} {
@@ -216,18 +244,17 @@
   setHtml(style, customStyle);
   $("head").appendChild(style);
 
+  // Renderizar la base del juego...
   setHtml(
     $("#root"),
-    `<div id="render" class="wh cs"></div>${Meteor(
-      BASE_WIDTH,
-      "g",
-      0,
-      BASE_HEIGHT - BASE_WIDTH * 0.4,
-      true
-    )}`
+    `<div id="render" class="wh cs"></div>${Meteor({
+      size: BASE_WIDTH,
+      top: BASE_HEIGHT - BASE_WIDTH * 0.4,
+      an: true,
+    })}`
   );
 
-  App("Lobby");
+  App("Game");
 
   $on(document, "contextmenu", (event) => event.preventDefault());
   $on(window, "resize", onWindowResize);
