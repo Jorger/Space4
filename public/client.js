@@ -7,6 +7,7 @@
   const BASE_HEIGHT = 732;
   const BASE_WIDTH = 412;
   const METEOR_SIZE = 50;
+  const BASE_POSITION = METEOR_SIZE * 0.18;
   $("html").style.cssText += `--h: ${BASE_HEIGHT}px; --w: ${BASE_WIDTH}px`;
   const setHtml = (element, html) => (element.innerHTML = html);
   const ObjectKeys = (obj) => Object.keys(obj);
@@ -31,8 +32,13 @@
    * @returns
    */
   const onRest = (target, callback) =>
-    $on(target, "transitionend", (evt) => callback(evt.propertyName));
+    $on(target, "transitionend", (evt) => callback(evt));
 
+  /**
+   * Agrega una clase a un elemento
+   * @param {*} target 
+   * @param {*} className 
+   */
   const addClass = (target, className) => {
     if (target) {
       className.split(" ").forEach((classText) => {
@@ -80,10 +86,14 @@
     }
   };
 
+  /**
+   * Función que aplica estilos en line a un elemento
+   * @param {*} styles 
+   * @returns 
+   */
   const inlineStyles = (styles) =>
-    `style='${ObjectKeys(styles)
-      .map((v) => `${v}:${styles[v]}`)
-      .join(";")}'`;
+    ObjectKeys(styles).length ? `style='${ObjectKeys(styles).map((v) => `${v}:${styles[v]}`).join(";")}'` : '';
+
 
   /**
    * Para establecer un tiempo para hacer una acción en una función
@@ -117,57 +127,164 @@
         scale >= 1 || mobile ? `scale(${!mobile ? scale : 1})` : undefined,
     });
   }, 100);
+
+
+  /**
+   * Función que crea un array para la grilla
+   * @param {*} callback 
+   * @returns 
+   */
+  const createGrid = callback => new Array(6).fill(null).map((_, c) => new Array(7).fill(null).map((_, f) => callback(c, f)))
   // fin de utilidades
 
   /**
    * Componente que renderizará un meteoro...
-   * @param {*} size
-   * @param {*} color
-   * @param {*} left
-   * @param {*} top
-   * @param {*} animated
-   * @returns
+   * @param {*} param0 
+   * @returns 
    */
   const Meteor = ({
-    size = METEOR_SIZE,
-    c = "g",
-    left = 0,
-    top = 0,
+    c = "",
+    style = {},
     id = "",
     an = false,
   }) =>
-    `<meteor ${id ? `id=${id} ` : ""}class='${c} ${
-      an ? "an" : ""
-    }' ${inlineStyles({
-      width: `${size}px`,
-      height: `${size}px`,
-      left: `${left}px`,
-      top: `${top}px`,
-    })}></meteor>`;
+    `<meteor ${id ? `id=${id} ` : ""}${c ? `class='${c}${an ? ' an' : ''}' ` : ''}${inlineStyles(style)}></meteor>`;
+
+
+  // Filas horizontal
+  // columnas vertical
 
   /**
    * Renderiza el board base del juego
+   * También renderizará los meteoros
    * @returns
    */
-  const Board = () =>
-    `<board ${inlineStyles({
-      width: `${METEOR_SIZE * 7}px`,
-      height: `${METEOR_SIZE * 6}px`,
+  const BoardHoles = () =>
+    `<holes class=wh ${inlineStyles({
       "-webkit-mask-image": `radial-gradient(transparent 50%, #fff 50%)`,
       "-webkit-mask-size": `${METEOR_SIZE}px ${METEOR_SIZE}px`,
       "-webkit-mask-position": `${METEOR_SIZE}px ${METEOR_SIZE}px`,
-    })}></board>`;
+    })}>
+      ${new Array(7).fill(null).map((_, i) => `<button id='h-${i}' ${inlineStyles({ width: `${METEOR_SIZE}px` })}></button>`).join('')}
+    </holes>`;
+
+  const Board = () =>
+    `<board ${inlineStyles({ width: `${METEOR_SIZE * 7}px`, height: `${METEOR_SIZE * 6}px` })}>
+      ${BoardHoles()}
+      ${createGrid((c, f) => Meteor({
+      id: `m-${(f) + (c * 7)}`, style: {
+        width: `${METEOR_SIZE * 0.63}px`,
+        height: `${METEOR_SIZE * 0.63}px`,
+        visibility: 'hidden'
+      }
+    })).map(v => v.join('')).join('')}
+    </board>`
+
+  // 16% de METEOR_SIZE
 
   const Game = () => {
+    // La grila dle juego...
+    let GRID = createGrid(() => []);
+
+    let meteorCounter = 0;
+    // Determina si una animación se está ejecuatando...
+    let animationOn = false;
+    // Para el color
+    let meteorColor = 1; // mejorar esta parte
+    /*
+    1 es azul
+    2 es rojo
+    */
+
+
+    const validateConnectFour = ([f, c] = position) => {
+      // Dada la posición, se busca si existe 4 o tres elementos del mismo color (horizontal, diagonal y vertical)
+      // Si hay 4 elementos se indica que ha ganado y se devuleve un array con las posiciones de los elementos
+      // Si es 3 igualmente se devuleve, para así ayudar a inferior al IA
+      animationOn = false;
+      meteorCounter++;
+      meteorColor = meteorColor === 1 ? 2 : 1;
+      // const [f, c] = e.target.getAttribute('p').split('-');
+      // console.log(e.target.getAttribute('p'));
+      console.log(GRID);
+      console.log(GRID[f][c]);
+    }
+
+
+    /**
+     * Función que captura la columna seleccionada en el board
+     * @param {*} index 
+     */
+    const selectedColumn = (index = 0, color = 1) => {
+      // Primero determinar la posición a donde llegaría el meteoro, 
+      // dependiendo de los valores qu existan en la grilla...
+      const newPosition = GRID.map(v => v[index]).filter(v => !v.length).length - 1;
+      if (animationOn || newPosition < 0) return;
+
+      const newMeteor = $(`#m-${meteorCounter}`);
+      // Guarda el color en la grilla
+      GRID[newPosition][index] = [color, meteorCounter];
+      // Guardar atributos en el elemento
+      newMeteor.setAttribute('p', `${newPosition}-${index}`);
+
+      // Establecer la posición inicial...
+      addStyle(newMeteor, {
+        left: `${BASE_POSITION + (METEOR_SIZE * index)}px`,
+        top: `${(METEOR_SIZE + BASE_POSITION) * -1}px`,
+        visibility: 'visible'
+      });
+
+      // Establece el color del meteoró...
+      addClass(newMeteor, ['b', 'r'][color - 1]);
+
+      // Interrupción para indicar la posición de llegada
+      setTimeout(() => {
+        addStyle(newMeteor, {
+          top: `${(BASE_POSITION) + (METEOR_SIZE * newPosition)}px`,
+        });
+      }, 100)
+
+      // Establece que se está haciendo una animación de movimiento
+      animationOn = true;
+    }
+
+
+
+    /**
+     * Función que resetea el estado del juego...
+     */
+    // const resetGame = () => {
+    // Solo cambiar el visibility
+    //   // Resetea las posiciones de los meteoros en el board
+    //   $$('board > meteor').forEach(mt => addStyle(mt, {visibility : 'hidden', left : 0, top : 0}));
+    //   // Resetear los valores de la matriz d ela grilla
+    // document.querySelector("#m-0").style = '';
+    // document.querySelector("#m-0").className = ''
+    //   GRID = createGrid(() => 0)
+    // };
+
+    // Renderiza el html del juego
     setHtml(
       $("#render"),
       `<div class='wh cs'>
-      ${Board()}
+        ${Board()}
       </div>`
     );
 
+    // Crear los eventos para el click en los hoyos
+    $$('holes > button').forEach(btn =>
+      $on(btn, "click", (e) => selectedColumn(+e.target.id.split('-')[1], meteorColor))
+    );
+
+    // Para los eventos de los mateoros...
+    $$('board > meteor').forEach(mt =>
+      onRest(mt, (e) => {
+        validateConnectFour(e.target.getAttribute('p').split('-'));
+      })
+    );
+
     // Agregar los eventos
-    // $on($("button"), "click", () => {
+    // $on($("#lobby"), "click", () => {
     //   console.log("Var al Lobby");
     //   App("Lobby");
     // });
@@ -225,10 +342,8 @@
           .fill(null)
           .map(
             (_, i) =>
-              `radial-gradient(circle, ${
-                meteorColors[m][i <= 6 ? "p" : i === 7 ? "s" : "t"]
-              } ${i <= 6 ? 18 : 60}%, rgba(255, 255, 255, 0) ${
-                (i <= 6 ? 18 : 60) + 1
+              `radial-gradient(circle, ${meteorColors[m][i <= 6 ? "p" : i === 7 ? "s" : "t"]
+              } ${i <= 6 ? 18 : 60}%, rgba(255, 255, 255, 0) ${(i <= 6 ? 18 : 60) + 1
               }%)`
           )
           .join(",")};
@@ -248,8 +363,12 @@
   setHtml(
     $("#root"),
     `<div id="render" class="wh cs"></div>${Meteor({
-      size: BASE_WIDTH,
-      top: BASE_HEIGHT - BASE_WIDTH * 0.4,
+      c: 'g',
+      style: {
+        width: `${BASE_WIDTH}px`,
+        height: `${BASE_WIDTH}px`,
+        top: `${BASE_HEIGHT - BASE_WIDTH * 0.4}px`
+      },
       an: true,
     })}`
   );

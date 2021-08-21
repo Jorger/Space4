@@ -44,7 +44,7 @@ div {
   background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
 }
 
-#render .wh {
+#render div.wh {
   z-index: 1;
 }
 
@@ -72,41 +72,29 @@ meteor.an {
 }
 /* Fin de los estilos del meteoro */
 
-/* Estilos para la base */
+/* Estilos para el board */
 board {
+  position: relative;
+}
+
+holes {
+  opacity: 0.6;
   background: #005f81;
   border-radius: 10px;
   box-shadow: inset 0px 0px 8px 2px #6fc6e1;
+  display: block;
+  position: absolute;
+  z-index: 1;
 }
 
-/* hole {
-  width: 80px;
-  height: 50px;
-  margin: 10px;
-  border: solid 1px red;
-  border-radius: 10px;
-  background-color: gray;
-} */
-
-/* Fin estilos de la base */
-
-/*
-https://www.quackit.com/css/codes/patterns/circular_background_patterns.cfm
-<style scoped>
-.pattern {
-	height:400px;
-	width:400px;
- }
-
-#circular1 {
-background-color:#ccc;
-background-image: radial-gradient(#eee 40%, transparent 40%),
-radial-gradient(#eee 40%, transparent 40%);
-background-size: 10% 10%;
-background-position: 20px 50px, 40px 40px;
+holes > button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  height: 100%;
 }
-</style>
 
-<div id="circular1" class="pattern">
-</div>
-*/
+board > meteor {
+  transition: top .5s cubic-bezier(0.86, -0.02, 0.45, 1.35);
+}
+/* Fin estilos board */
