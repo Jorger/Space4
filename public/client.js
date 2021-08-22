@@ -12,6 +12,7 @@
   const NUM_COLS = 7;
   const MAX_METEORITES = 4;
   const AVATARS = ["👩‍🚀", "👩🏽‍🚀", "👨‍🚀", "👩🏻‍🚀", "👨🏼‍🚀", "👩🏼‍🚀", "👩🏾‍🚀", "👨🏽‍🚀", "👨🏻‍🚀", "👨🏿‍🚀", "👩🏿‍🚀", "👨🏾‍🚀"];
+  const METEOR_COLORS = ['blue', 'red'];
   const CACHE_KEY = "space-four";
   $("html").style.cssText += `--h: ${BASE_HEIGHT}px; --w: ${BASE_WIDTH}px`;
   const setHtml = (element, html) => (element.innerHTML = html);
@@ -175,7 +176,7 @@
       transform:
         scale >= 1 || mobile ? `scale(${!mobile ? scale : 1})` : undefined,
     });
-  }, 100);
+  }, 50);
 
 
   /**
@@ -192,12 +193,11 @@
    * @returns 
    */
   const Meteor = ({
-    c = "",
     style = {},
     id = "",
     an = false,
   }) =>
-    `<meteor ${id ? `id=${id} ` : ""}${c ? `class='${c}${an ? ' an' : ''}' ` : ''}${inlineStyles(style)}></meteor>`;
+    `<meteor ${id ? `id=${id} ` : ""}${an ? `class=an ` : ''}${inlineStyles(style)}></meteor>`;
 
 
   // Filas vertical
@@ -232,7 +232,11 @@
   // 16% de METEOR_SIZE
 
   const Game = (options) => {
+    const {isTwoPlayers = false, isBot = "", isOnline = {} } = options;
+    console.log("OPTIONS");
     console.log(options);
+    console.log({isTwoPlayers, isBot, isOnline});
+    // {isOnline : {activated : false}, isBot : {activated : false}, isTwoPlayers : {activated : false}}
     // La grila dle juego...
     let GRID = createGrid(() => []);
     let meteorCounter = 0;
@@ -243,11 +247,54 @@
 
     // Guardará las conexiones que están cerca a cumplirse
     // útil para la IA
-    let possibleConnections = [];
+    let possibleConnections = {};
     /*
     1 es azul
     2 es rojo
     */
+
+
+    /**
+     * Función que valida el siguiente movimiento
+     * En está función, también se determina si se ha hecho la conexión
+     * @param {*} response 
+     */
+    const validateEndsMovement = (response) => {
+      // console.log("responde esto");
+      console.log(response);
+
+      // Guarda los posibles movimientos
+      // útil para la validación de tipo IA
+      if (ObjectKeys(response.posible).length) {
+        const color = METEOR_COLORS[meteorColor - 1];
+
+        if (!possibleConnections[color]) {
+          possibleConnections[color] = {};
+        }
+
+        // Iterar sobre todos los posibles...
+        for (let counter = MAX_METEORITES - 1; counter >= 1; counter--) {
+          const possibleKey = `c-${MAX_METEORITES - counter}`;
+
+          if (!possibleConnections[color][possibleKey]) {
+            possibleConnections[color][possibleKey] = [];
+          }
+
+          if (response.posible[possibleKey].length) {
+            possibleConnections[color][possibleKey] = [...new Set([...possibleConnections[color][possibleKey], ...response.posible[possibleKey]].map(v => `${v[0]}${v[1]}`))].map(v => v.split('').map(n => +n));
+          }
+        }
+
+        console.log(possibleConnections);
+      }
+
+      animationOn = false;
+      meteorCounter++;
+      meteorColor = meteorColor === 1 ? 2 : 1;
+
+      // Filtrar sólo aquellos que tengan base...
+      // posible = posible.filter(v => v[0] + 1 === NUM_ROWS ? true : GRID[v[0] + 1][v[1]].length !== 0);
+    }
 
     /**
      * Valida si una coordenada está dentro del escenario 
@@ -261,16 +308,15 @@
      * Función que valida si se ha logrado conectar los meteoros
      * También devuelve potenciales movimientos para evitar la conexión, útil para la "IA"
      * @param {*} position 
-     * @param {*} connection 
      * @returns 
      */
-    const validateMeteorConnection = (position, connection = MAX_METEORITES) => {
+    const validateMeteorConnection = (position) => {
       const row = +position[0];
       const col = +position[1];
       const currentColor = GRID[row][col][0];
       const possibleLines = { v: [[row, col]] };
       // Guarda las posiciones posibles de conexión...
-      const posible = [];
+      const posible = {};
 
       // Dada la posición, se busca si existe 4 o tres elementos del mismo color (horizontal, diagonal y vertical)
       // Si hay 4 elementos se indica que ha ganado y se devuleve un array con las posiciones de los elementos
@@ -281,7 +327,7 @@
         if (GRID[i][col][0] === currentColor) {
           possibleLines.v.push([i, col]);
 
-          if (possibleLines.v.length === connection) {
+          if (possibleLines.v.length === MAX_METEORITES) {
             break;
           }
         }
@@ -291,10 +337,10 @@
       }
 
       // Existe la cantidad de meteoritos en vertical
-      if (possibleLines.v.length === connection) {
+      if (possibleLines.v.length === MAX_METEORITES) {
         return {
           connect: true,
-          posible, 
+          posible,
           meteorites: possibleLines.v
         }
       }
@@ -308,7 +354,7 @@
             possibleLines.h.push([row, newCol]);
             newCol += times === 1 ? -1 : 1;
 
-            if (possibleLines.h.length === connection) {
+            if (possibleLines.h.length === MAX_METEORITES) {
               break;
             }
 
@@ -319,10 +365,10 @@
       }
 
       // Existe la cantidad de meteoritos en horizontal
-      if (possibleLines.h.length === connection) {
+      if (possibleLines.h.length === MAX_METEORITES) {
         return {
           connect: true,
-          posible, 
+          posible,
           meteorites: possibleLines.h
         }
       }
@@ -347,7 +393,7 @@
               newRow += increments.row;
               newCol += increments.col;
 
-              if (possibleLines[key].length === connection) {
+              if (possibleLines[key].length === MAX_METEORITES) {
                 break;
               }
 
@@ -357,10 +403,10 @@
           } while (1);
         }
 
-        if (possibleLines[key].length === connection) {
+        if (possibleLines[key].length === MAX_METEORITES) {
           return {
             connect: true,
-            posible, 
+            posible,
             meteorites: possibleLines[key]
           }
         }
@@ -368,50 +414,58 @@
 
       // Si llega a este punto, es que no existe ninguna coincidencia
       // Por lo tanto se devolverá las cercanas...
-      // Para horizontal
-      if (possibleLines.h.length === connection - 1) {
-        // debugger;
-        const posibleHorizontal = possibleLines.h.map(v => v[1]).sort();
-        const limits = {
-          left: posibleHorizontal[0] - 1,
-          right: posibleHorizontal[posibleHorizontal.length - 1] + 1
-        };
 
-        for (let times = 1; times <= 2; times++) {
-          const key = times === 1 ? "left" : "right";
+      // TO-DO: Validar que sólo se haga esto si se está jugando Vs un bot
+      // Además que el nivel del juego sea medium or hard
+      for (let counter = MAX_METEORITES - 1; counter >= 1; counter--) {
+        const possibleKey = `c-${MAX_METEORITES - counter}`;
+        posible[possibleKey] = [];
 
-          if (coordinateOnStage(row, limits[key]) && GRID[row][limits[key]].length === 0) {
-            posible.push([row, limits[key]]);
-          }
-        }
-      }
-
-      // // Vertical
-      if (possibleLines.v.length === connection - 1) {
-        // debugger;
-        const topLimit = possibleLines.v[0][0] - 1;
-
-        if (coordinateOnStage(topLimit, col) && GRID[topLimit][col].length === 0) {
-          posible.push([topLimit, col]);
-        }
-      }
-
-      // Para las diagonales...
-      for (let diagonal = 1; diagonal <= 2; diagonal++) {
-        const key = diagonal === 1 ? 'id' : 'di';
-
-        if (possibleLines[key].length === connection - 1) {
+        // Para horizontal
+        if (possibleLines.h.length === MAX_METEORITES - counter) {
           // debugger;
-          const posibleDiagonal = possibleLines[key].sort((a, b) => a[0] - b[0]);
+          const posibleHorizontal = possibleLines.h.map(v => v[1]).sort();
+          const limits = {
+            left: posibleHorizontal[0] - 1,
+            right: posibleHorizontal[posibleHorizontal.length - 1] + 1
+          };
 
           for (let times = 1; times <= 2; times++) {
-            const limits = posibleDiagonal[times === 1 ? 0 : posibleDiagonal.length - 1];
+            const key = times === 1 ? "left" : "right";
 
-            const newRow = limits[0] + (times === 1 ? -1 : 1);
-            const newCol = limits[1] + (diagonal === 1 ? times === 1 ? -1 : 1 : times === 1 ? 1 : -1);
+            if (coordinateOnStage(row, limits[key]) && GRID[row][limits[key]].length === 0) {
+              posible[possibleKey].push([row, limits[key]]);
+            }
+          }
+        }
 
-            if (coordinateOnStage(newRow, newCol) && GRID[newRow][newCol].length === 0) {
-              posible.push([newRow, newCol]);
+        // // Vertical
+        if (possibleLines.v.length === MAX_METEORITES - counter) {
+          // debugger;
+          const topLimit = possibleLines.v[0][0] - 1;
+
+          if (coordinateOnStage(topLimit, col) && GRID[topLimit][col].length === 0) {
+            posible[possibleKey].push([topLimit, col]);
+          }
+        }
+
+        // Para las diagonales...
+        for (let diagonal = 1; diagonal <= 2; diagonal++) {
+          const key = diagonal === 1 ? 'id' : 'di';
+
+          if (possibleLines[key].length === MAX_METEORITES - counter) {
+            // debugger;
+            const posibleDiagonal = possibleLines[key].sort((a, b) => a[0] - b[0]);
+
+            for (let times = 1; times <= 2; times++) {
+              const limits = posibleDiagonal[times === 1 ? 0 : posibleDiagonal.length - 1];
+
+              const newRow = limits[0] + (times === 1 ? -1 : 1);
+              const newCol = limits[1] + (diagonal === 1 ? times === 1 ? -1 : 1 : times === 1 ? 1 : -1);
+
+              if (coordinateOnStage(newRow, newCol) && GRID[newRow][newCol].length === 0) {
+                posible[possibleKey].push([newRow, newCol]);
+              }
             }
           }
         }
@@ -444,11 +498,12 @@
       addStyle(newMeteor, {
         left: `${BASE_POSITION + (METEOR_SIZE * index)}px`,
         top: `${(METEOR_SIZE + BASE_POSITION) * -1}px`,
+        filter: `brightness(40%) sepia(100%) hue-rotate(${color === 1 ? 183 : -50}deg) saturate(600%)`,
         visibility: 'visible'
       });
 
       // Establece el color del meteoró...
-      addClass(newMeteor, ['b', 'r'][color - 1]);
+      // addClass(newMeteor, ['b', 'r'][color - 1]);
 
       // Interrupción para indicar la posición de llegada
       setTimeout(() => {
@@ -491,95 +546,96 @@
 
     // Para los eventos de los mateoros...
     $$('board > meteor').forEach(mt =>
-      onRest(mt, (e) => {
-        const response = validateMeteorConnection(e.target.getAttribute('p').split('-'));
-        // console.log("responde esto");
-        console.log(response);
-
-        if (response.posible.length) {
-          if (!possibleConnections[meteorColor - 1]) {
-            possibleConnections[meteorColor - 1] = [];
-          }
-
-          possibleConnections[meteorColor - 1] = [...possibleConnections[meteorColor - 1], ...response.posible];
-          console.log(possibleConnections);
-        }
-
-        animationOn = false;
-        meteorCounter++;
-        meteorColor = meteorColor === 1 ? 2 : 1;
-
-        // Filtrar sólo aquellos que tengan base...
-        // posible = posible.filter(v => v[0] + 1 === NUM_ROWS ? true : GRID[v[0] + 1][v[1]].length !== 0);
-      })
+      onRest(mt, (e) =>
+        validateEndsMovement(validateMeteorConnection(e.target.getAttribute('p').split('-')))
+      )
     );
-
-    // Agregar los eventos
-    // $on($("#lobby"), "click", () => {
-    //   console.log("Var al Lobby");
-    //   App("Lobby");
-    // });
   };
 
 
   const Difficulty = () => {
-    const BTS = ["Easy", "Medium", "Hard"];
-
     setHtml(
       $("#render"),
-      `<div class='wh cs'>
-        ${BTS.map(v => `<button id=${v.toLowerCase()}>${v}</button>`).join("")}
+      `<div class='cs' ${inlineStyles({ 'flex-direction': 'column' })}>
+        <button id=back  ${inlineStyles({
+        position: 'absolute',
+        left: '5%',
+        top: '5%',
+        'font-size': '20px',
+        background: 'no-repeat',
+        color: 'white',
+        border: 0,
+        cursor: 'pointer', 
+        'font-weight' : 'bold'
+      })}>Back</button>
+        <h2 ${inlineStyles({ 'margin-bottom': '20px', 'text-align' : 'center', 'text-transform' : 'uppercase' })}>${getValueFromCache("name", "")}<br>CHOOSE DIFFICULTY</h2>
+        ${["Easy", "Medium", "Hard"].map(v => `<button class=button id=${v.toLowerCase()} ${inlineStyles({ width: '150px', 'margin-bottom': '20px' })}>${v}</button>`).join("")}
       </div>`
     );
 
-    $$('button').forEach(btn => {
+    $$('.button').forEach(btn => {
       $on(btn, "click", (e) => {
-        console.log(e.target.id);
+        App("Game", {
+          isBot : e.target.id
+        });
       });
     });
+
+    $on($("#back"), "click", () => App("Lobby"));
   };
 
 
-  const Avatar = ({name, avatar}) => {
-    console.log({name, avatar});
-    return `<div class='cs' style="flex-direction: column;"><avatar>${AVATARS[avatar]}</avatar>${name}</div>`;
+  const Logo = () => `<h1 class=logo>Space4</h1>`;
+
+  // Para el cargador de tiempo:
+  // https://codeconvey.com/css-percentage-circle/
+  const Avatar = ({ name, avatar, edit = true }) => {
+    return `<avatar class=cs>
+              <avatar-image>
+                ${AVATARS[avatar]}
+              </avatar-image>
+              <avatar-name>
+                ${edit ? `<button>${name}</button>` : name}
+              </avatar-name>
+              ${edit ? `
+                <select class=avatars>
+                  ${AVATARS.map((v, i) => `<option value=${i}${avatar === i ? " selected" : ""}>${v}</option>`).join('')}
+                </select>` : ""
+              }
+            </avatar>`;
   }
 
   const Lobby = () => {
-    const avatarData = {
-      name : getValueFromCache("name", ""), 
-      avatar : getValueFromCache("avatar", 0)
-    };
-
-    const BTS = [
-      [
-        'Vs Bot',
-        'bot'
-      ],
-      [
-        'Two Players',
-        'two'
-      ],
-      [
-        'Play with friends',
-        'friend'
-      ],
-      [
-        'Play Online',
-        'online'
-      ]
-    ];
-
     // Cuando tenga que jugar contra el roboto se usa este emoji: 🤖
     // Cuando juegue contra otra persona en el mismo equipo: 👽
 
-
     setHtml(
       $("#render"),
-      `<div>
-        ${Avatar(avatarData)}
-        <div class=options>
-          ${BTS.map(v => `<button id=${v[1]}>${v[0]}</button>`).join("")}
+      `<div class=cs ${inlineStyles({ 'flex-direction': 'column', 'z-index': 5 })}>
+        ${Logo()}
+        ${Avatar({
+        name: getValueFromCache("name", ""),
+        avatar: getValueFromCache("avatar", 0)
+      })}
+        <div class='cs options' ${inlineStyles({ 'flex-direction': 'column', 'margin-top': '25px' })}>
+          ${[
+            [
+              'Vs Bot',
+              'bot'
+            ],
+            [
+              'Two Players',
+              'two'
+            ],
+            [
+              'Play with friends',
+              'friend'
+            ],
+            [
+              'Play Online',
+              'online'
+            ]
+          ].map(v => `<button class=button id=${v[1]} ${inlineStyles({ width: '260px', 'margin-bottom': '20px' })}>${v[0]}</button>`).join("")}
         </div>
       </div>`
     );
@@ -587,20 +643,38 @@
     $$('.options > button').forEach(btn => {
       $on(btn, "click", (e) => {
         const type = e.target.id;
-        if (type !== "bot") {
-          App("Game", { type: "nothibg" });
-        } else {
+        const options = {};
+
+        if(type === "two") {
+          options.isTwoPlayers = true;
+          App("Game", options);
+        }
+
+        if(type === "bot") {
           App("Difficulty");
         }
+        
       });
     });
 
+    // Para los eventos dek avatar
+    $on($(".avatars"), "change", (e) => {
+      setHtml($("avatar-image"), AVATARS[e.target.value]);
+      savePropierties("avatar", +e.target.value);
+    });
 
-    // Agregar los eventos
-    // $on($("button"), "click", () => {
-    //   console.log("Va al Game");
-    //   App("Game");
-    // });
+    $on($("avatar-name button"), "click", () => {
+      const newName = sanizateTags(
+        prompt('Write your name (MAX 10)', getValueFromCache("name", ""))
+      );
+
+      if (newName) {
+        const shortName = newName.length > 10 ? newName.substring(0, 10) + '...' : newName;
+
+        $("avatar-name button").textContent = shortName;
+        savePropierties("name", shortName);
+      }
+    });
   };
 
   const App = (screen = "Lobby", params = {}) => {
@@ -613,51 +687,18 @@
     Handler[screen](params);
   };
 
-  const meteorColors = {
-    g: {
-      b: "#bbacb0",
-      p: "#675c60",
-      s: "#81767a",
-      t: "#938c8f",
-    },
-    b: {
-      b: "#3d72b1",
-      p: "#03478d",
-      s: "#0166ac",
-      t: "#085b9c",
-    },
-    r: {
-      b: "#ea694f",
-      p: "#e0552c",
-      s: "#b82a0d",
-      t: "#d44729",
-    },
-  };
-
-  const customStyle = ObjectKeys(meteorColors)
-    .map(
-      (m) => `
-      meteor.${m} {
-        background: ${meteorColors[m].b};
-        background-image: ${new Array(9)
-          .fill(null)
-          .map(
-            (_, i) =>
-              `radial-gradient(circle, ${meteorColors[m][i <= 6 ? "p" : i === 7 ? "s" : "t"]
-              } ${i <= 6 ? 18 : 60}%, rgba(255, 255, 255, 0) ${(i <= 6 ? 18 : 60) + 1
-              }%)`
-          )
-          .join(",")};
-        background-repeat: no-repeat;
-        background-size: 89% 85%, 60% 60%, 30% 30%, 15% 15%, 15% 15%, 15% 15%, 23% 23%, 120% 120%, 120% 120%;
-        background-position: -109% -82%, 115% -5%, 70% 42%, 59% 7%, 39% 52%, 55% 87%, 30% 77%, -60% 53%, 0 53%;
-      }
-    `
-    )
-    .join("");
+  const starsStyle = [300, 200, 100].map((v, index) =>
+    `.star-${index} {
+      width: 1px;
+      height: 1px;
+      background: transparent;
+      box-shadow: ${new Array(v).fill(null).map(() => `${randomNumber(1, 2000)}px ${randomNumber(1, 2000)}px #FFF`).join(',')};
+      animation : animStar ${(50 * index) + 50}s linear infinite;
+    }`
+  ).join('');
 
   const style = document.createElement("style");
-  setHtml(style, customStyle);
+  setHtml(style, starsStyle);
   $("head").appendChild(style);
 
   // Renderizar la base del juego...
@@ -668,19 +709,25 @@
       style: {
         width: `${BASE_WIDTH}px`,
         height: `${BASE_WIDTH}px`,
-        top: `${BASE_HEIGHT - BASE_WIDTH * 0.4}px`
+        top: `${BASE_HEIGHT - BASE_WIDTH * 0.4}px`,
+        'z-index': 2
       },
       an: true,
-    })}`
+    })}
+    ${new Array(3).fill(null).map((_, i) => `<div class='star-${i}'></div>`).join('')}
+    `
   );
 
   // Establecer alugno valores en sesion storage
-  if(!ObjectKeys(getDataCache()).length) {
+  if (!ObjectKeys(getDataCache()).length) {
     savePropierties("name", `Astronaut ${randomNumber(100, 999)}`);
     savePropierties("avatar", randomNumber(0, AVATARS.length - 1));
+    savePropierties("token", guid());
   }
 
   App("Lobby");
+  // App("Difficulty");
+  // App("Game");
 
   $on(document, "contextmenu", (event) => event.preventDefault());
   $on(window, "resize", onWindowResize);

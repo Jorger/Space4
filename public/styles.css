@@ -16,6 +16,7 @@ body {
   overflow: hidden;
   position: fixed;
   user-select: none;
+  /* -webkit-tap-highlight-color: transparent; */
 }
 
 div {
@@ -45,7 +46,52 @@ div {
 }
 
 #render div.wh {
-  z-index: 1;
+  z-index: 3;
+}
+
+@keyframes animStar {
+  from {
+    transform: translateY(-2000px);
+  }
+  to {
+    transform: translateY(-150px);
+  }
+}
+
+
+.button {
+  position: relative;
+  margin: auto;
+  padding-right: 1.5rem;
+  padding-left: 1.5rem;
+  font-size: 1rem;
+  line-height: 3rem;
+  text-decoration: none;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-image: linear-gradient(160deg, #ff0000, #ec008c);
+  border-radius: 30px;
+  cursor: pointer;
+  user-select: none;
+  box-shadow: 0 0 0 0 #ec008c, 0.5rem 0.5rem 30px #13092d;
+  transition: box-shadow 0.6s;
+}
+.button:hover {
+  box-shadow: 0 0 60px 2px #ec008c, 0.5rem 0.5rem 30px #13092d;
+}
+.button:after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  bottom: 2px;
+  left: 2px;
+  border-radius: 30px;
+  background-image: linear-gradient(170deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0));
+  pointer-events: none;
 }
 
 /* Finde estilos globales */
@@ -55,6 +101,11 @@ meteor {
   position: absolute;
   border-radius: 100%;
   overflow: hidden;
+  background: #bbacb0;
+  background-image: radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),radial-gradient(circle, #81767a 60%, rgba(255, 255, 255, 0) 61%),radial-gradient(circle, #938c8f 60%, rgba(255, 255, 255, 0) 61%);
+  background-repeat: no-repeat;
+  background-size: 89% 85%, 60% 60%, 30% 30%, 15% 15%, 15% 15%, 15% 15%, 23% 23%, 120% 120%, 120% 120%;
+  background-position: -109% -82%, 115% -5%, 70% 42%, 59% 7%, 39% 52%, 55% 87%, 30% 77%, -60% 53%, 0 53%;
 }
 
 meteor.an {
@@ -74,14 +125,15 @@ meteor.an {
 
 /* Estilos para el board */
 board {
-  position: relative;
+  /* position: relative; */
+  position: absolute;
+  bottom: 50px;
 }
 
 holes {
-  opacity: 0.6;
-  background: #005f81;
+  background: linear-gradient(to bottom, #C0C0C0 0%, #B1B1B1 100%);
   border-radius: 10px;
-  box-shadow: inset 0px 0px 8px 2px #6fc6e1;
+  box-shadow: inset 0px 0px 9px 6px #6c6b6b;
   display: block;
   position: absolute;
   z-index: 1;
@@ -100,11 +152,58 @@ board > meteor {
 /* Fin estilos board */
 
 /* Para los estilos del avatar */
+
 avatar {
+  flex-direction: column;
+  position: relative;
+}
+
+avatar-image {
+  background: #b0b4b6;
+  border-radius: 50%;
+  border: 5px solid black;
+  box-shadow: 1px -1px 19px 1px white;
+  font-size:5rem;
+  height: 100px;
+  overflow: hidden;
+  text-align:center;
+  width: 100px;
+}
+
+.avatars {
+  cursor: pointer;
+  position: absolute;
+  top: 5%;
   width: 100px;
   height: 100px;
-  border-radius: 50%;
-  border: 1px solid red;
-  font-size:5rem;
-  text-align:center;
+  opacity: 0;
+  font-size: 40px;
 }
+
+avatar-name {
+  margin-top: 10px;
+  font-weight: bold;
+  font-size: 25px;
+}
+
+avatar-name button {
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+/* Fin de los estilos del avatar */
+
+/* Estilos para el logo */
+.logo {
+  font-size: 60px;
+  /* color: #0066b685;
+  text-shadow: 0 0 5px #FFF, 0 0 10px #FFF, 0 0 15px #FFF, 0 0 20px #2196f3, 0 0 30px #2196f3, 0 0 40px #2196f3, 0 0 55px #2196f3, 0 0 75px #2196f3; */
+  /* color: #FFFFFF; */
+  text-shadow: #FFF 0px 0px 5px, #FFF 0px 0px 10px, #FFF 0px 0px 15px, #FF2D95 0px 0px 20px, #FF2D95 0px 0px 30px, #FF2D95 0px 0px 40px, #FF2D95 0px 0px 50px, #FF2D95 0px 0px 75px;
+  margin-bottom: 30px;
+}
+/* fin de los estilos del logo */
