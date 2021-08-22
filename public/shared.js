@@ -1,6 +1,3 @@
 "use strict";
 
-const GUESS_NO = 0;
-const GUESS_ROCK = 1;
-const GUESS_PAPER = 2;
-const GUESS_SCISSORS = 3;
+const randomNumber = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;

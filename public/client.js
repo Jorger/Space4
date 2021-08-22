@@ -8,9 +8,58 @@
   const BASE_WIDTH = 412;
   const METEOR_SIZE = 50;
   const BASE_POSITION = METEOR_SIZE * 0.18;
+  const NUM_ROWS = 6;
+  const NUM_COLS = 7;
+  const MAX_METEORITES = 4;
+  const AVATARS = ["👩‍🚀", "👩🏽‍🚀", "👨‍🚀", "👩🏻‍🚀", "👨🏼‍🚀", "👩🏼‍🚀", "👩🏾‍🚀", "👨🏽‍🚀", "👨🏻‍🚀", "👨🏿‍🚀", "👩🏿‍🚀", "👨🏾‍🚀"];
+  const CACHE_KEY = "space-four";
   $("html").style.cssText += `--h: ${BASE_HEIGHT}px; --w: ${BASE_WIDTH}px`;
   const setHtml = (element, html) => (element.innerHTML = html);
   const ObjectKeys = (obj) => Object.keys(obj);
+
+
+  /**
+   * Guadar la información dada en localStorage/sessionStorage
+   * @param {*} data
+   */
+  const saveCache = (data, storageType = "localStorage") => {
+    window[storageType].setItem(CACHE_KEY, JSON.stringify(data));
+  };
+
+  /**
+   * Obtener la data que está guardarda en localStorage/sessionStorage
+   */
+  const getDataCache = (storageType = "localStorage") => {
+    const data = window[storageType].getItem(CACHE_KEY) || "";
+    return data !== "" ? JSON.parse(data) : {};
+  };
+
+  /**
+ * Guarda valores de una propiedad en localstorage
+ * @param {*} property
+ * @param {*} value
+ */
+  const savePropierties = (
+    property,
+    value,
+    storageType = "localStorage"
+  ) => {
+    const localCache = getDataCache(storageType);
+    localCache[property] = value;
+    saveCache(localCache, storageType);
+  };
+
+  /**
+   * Dada una propiedad, devuelve la información de la misma
+   */
+  const getValueFromCache = (
+    key = "",
+    initial,
+    storageType = "localStorage"
+  ) => {
+    const localCache = getDataCache(storageType);
+    return localCache[key] || initial;
+  };
 
   /**
    * Para edicioar eventos
@@ -134,7 +183,7 @@
    * @param {*} callback 
    * @returns 
    */
-  const createGrid = callback => new Array(6).fill(null).map((_, c) => new Array(7).fill(null).map((_, f) => callback(c, f)))
+  const createGrid = callback => new Array(NUM_ROWS).fill(null).map((_, c) => new Array(NUM_COLS).fill(null).map((_, f) => callback(c, f)))
   // fin de utilidades
 
   /**
@@ -151,8 +200,8 @@
     `<meteor ${id ? `id=${id} ` : ""}${c ? `class='${c}${an ? ' an' : ''}' ` : ''}${inlineStyles(style)}></meteor>`;
 
 
-  // Filas horizontal
-  // columnas vertical
+  // Filas vertical
+  // columnas horizontal
 
   /**
    * Renderiza el board base del juego
@@ -165,7 +214,7 @@
       "-webkit-mask-size": `${METEOR_SIZE}px ${METEOR_SIZE}px`,
       "-webkit-mask-position": `${METEOR_SIZE}px ${METEOR_SIZE}px`,
     })}>
-      ${new Array(7).fill(null).map((_, i) => `<button id='h-${i}' ${inlineStyles({ width: `${METEOR_SIZE}px` })}></button>`).join('')}
+      ${new Array(NUM_COLS).fill(null).map((_, i) => `<button id='h-${i}' ${inlineStyles({ width: `${METEOR_SIZE}px` })}></button>`).join('')}
     </holes>`;
 
   const Board = () =>
@@ -182,32 +231,196 @@
 
   // 16% de METEOR_SIZE
 
-  const Game = () => {
+  const Game = (options) => {
+    console.log(options);
     // La grila dle juego...
     let GRID = createGrid(() => []);
-
     let meteorCounter = 0;
     // Determina si una animación se está ejecuatando...
     let animationOn = false;
     // Para el color
     let meteorColor = 1; // mejorar esta parte
+
+    // Guardará las conexiones que están cerca a cumplirse
+    // útil para la IA
+    let possibleConnections = [];
     /*
     1 es azul
     2 es rojo
     */
 
+    /**
+     * Valida si una coordenada está dentro del escenario 
+     * @param {*} row 
+     * @param {*} col 
+     * @returns 
+     */
+    const coordinateOnStage = (row, col) => row >= 0 && row < NUM_ROWS && col >= 0 && col < NUM_COLS;
 
-    const validateConnectFour = ([f, c] = position) => {
+    /**
+     * Función que valida si se ha logrado conectar los meteoros
+     * También devuelve potenciales movimientos para evitar la conexión, útil para la "IA"
+     * @param {*} position 
+     * @param {*} connection 
+     * @returns 
+     */
+    const validateMeteorConnection = (position, connection = MAX_METEORITES) => {
+      const row = +position[0];
+      const col = +position[1];
+      const currentColor = GRID[row][col][0];
+      const possibleLines = { v: [[row, col]] };
+      // Guarda las posiciones posibles de conexión...
+      const posible = [];
+
       // Dada la posición, se busca si existe 4 o tres elementos del mismo color (horizontal, diagonal y vertical)
       // Si hay 4 elementos se indica que ha ganado y se devuleve un array con las posiciones de los elementos
       // Si es 3 igualmente se devuleve, para así ayudar a inferior al IA
-      animationOn = false;
-      meteorCounter++;
-      meteorColor = meteorColor === 1 ? 2 : 1;
-      // const [f, c] = e.target.getAttribute('p').split('-');
-      // console.log(e.target.getAttribute('p'));
-      console.log(GRID);
-      console.log(GRID[f][c]);
+
+      // Primero en vertical...
+      for (let i = row + 1; i < NUM_ROWS; i++) {
+        if (GRID[i][col][0] === currentColor) {
+          possibleLines.v.push([i, col]);
+
+          if (possibleLines.v.length === connection) {
+            break;
+          }
+        }
+        else {
+          break;
+        }
+      }
+
+      // Existe la cantidad de meteoritos en vertical
+      if (possibleLines.v.length === connection) {
+        return {
+          connect: true,
+          posible, 
+          meteorites: possibleLines.v
+        }
+      }
+
+      // Ahora buscar en horizontal...
+      possibleLines.h = [[row, col]];
+      for (let times = 1; times <= 2; times++) {
+        let newCol = col + (times === 1 ? -1 : 1);
+        do {
+          if (coordinateOnStage(row, newCol) && GRID[row][newCol][0] === currentColor) {
+            possibleLines.h.push([row, newCol]);
+            newCol += times === 1 ? -1 : 1;
+
+            if (possibleLines.h.length === connection) {
+              break;
+            }
+
+          } else {
+            break;
+          }
+        } while (1);
+      }
+
+      // Existe la cantidad de meteoritos en horizontal
+      if (possibleLines.h.length === connection) {
+        return {
+          connect: true,
+          posible, 
+          meteorites: possibleLines.h
+        }
+      }
+
+      // Para validar las diagonales
+      for (let diagonal = 1; diagonal <= 2; diagonal++) {
+        const key = diagonal === 1 ? 'id' : 'di';
+        possibleLines[key] = [[row, col]];
+
+        for (let times = 1; times <= 2; times++) {
+          const increments = {
+            col: diagonal === 1 ? times === 1 ? -1 : 1 : times === 1 ? 1 : -1,
+            row: times === 1 ? -1 : 1
+          };
+
+          let newCol = col + increments.col;
+          let newRow = row + increments.row;
+
+          do {
+            if (coordinateOnStage(newRow, newCol) && GRID[newRow][newCol][0] === currentColor) {
+              possibleLines[key].push([newRow, newCol]);
+              newRow += increments.row;
+              newCol += increments.col;
+
+              if (possibleLines[key].length === connection) {
+                break;
+              }
+
+            } else {
+              break;
+            }
+          } while (1);
+        }
+
+        if (possibleLines[key].length === connection) {
+          return {
+            connect: true,
+            posible, 
+            meteorites: possibleLines[key]
+          }
+        }
+      }
+
+      // Si llega a este punto, es que no existe ninguna coincidencia
+      // Por lo tanto se devolverá las cercanas...
+      // Para horizontal
+      if (possibleLines.h.length === connection - 1) {
+        // debugger;
+        const posibleHorizontal = possibleLines.h.map(v => v[1]).sort();
+        const limits = {
+          left: posibleHorizontal[0] - 1,
+          right: posibleHorizontal[posibleHorizontal.length - 1] + 1
+        };
+
+        for (let times = 1; times <= 2; times++) {
+          const key = times === 1 ? "left" : "right";
+
+          if (coordinateOnStage(row, limits[key]) && GRID[row][limits[key]].length === 0) {
+            posible.push([row, limits[key]]);
+          }
+        }
+      }
+
+      // // Vertical
+      if (possibleLines.v.length === connection - 1) {
+        // debugger;
+        const topLimit = possibleLines.v[0][0] - 1;
+
+        if (coordinateOnStage(topLimit, col) && GRID[topLimit][col].length === 0) {
+          posible.push([topLimit, col]);
+        }
+      }
+
+      // Para las diagonales...
+      for (let diagonal = 1; diagonal <= 2; diagonal++) {
+        const key = diagonal === 1 ? 'id' : 'di';
+
+        if (possibleLines[key].length === connection - 1) {
+          // debugger;
+          const posibleDiagonal = possibleLines[key].sort((a, b) => a[0] - b[0]);
+
+          for (let times = 1; times <= 2; times++) {
+            const limits = posibleDiagonal[times === 1 ? 0 : posibleDiagonal.length - 1];
+
+            const newRow = limits[0] + (times === 1 ? -1 : 1);
+            const newCol = limits[1] + (diagonal === 1 ? times === 1 ? -1 : 1 : times === 1 ? 1 : -1);
+
+            if (coordinateOnStage(newRow, newCol) && GRID[newRow][newCol].length === 0) {
+              posible.push([newRow, newCol]);
+            }
+          }
+        }
+      }
+
+      return {
+        connect: false,
+        posible
+      }
     }
 
 
@@ -279,7 +492,25 @@
     // Para los eventos de los mateoros...
     $$('board > meteor').forEach(mt =>
       onRest(mt, (e) => {
-        validateConnectFour(e.target.getAttribute('p').split('-'));
+        const response = validateMeteorConnection(e.target.getAttribute('p').split('-'));
+        // console.log("responde esto");
+        console.log(response);
+
+        if (response.posible.length) {
+          if (!possibleConnections[meteorColor - 1]) {
+            possibleConnections[meteorColor - 1] = [];
+          }
+
+          possibleConnections[meteorColor - 1] = [...possibleConnections[meteorColor - 1], ...response.posible];
+          console.log(possibleConnections);
+        }
+
+        animationOn = false;
+        meteorCounter++;
+        meteorColor = meteorColor === 1 ? 2 : 1;
+
+        // Filtrar sólo aquellos que tengan base...
+        // posible = posible.filter(v => v[0] + 1 === NUM_ROWS ? true : GRID[v[0] + 1][v[1]].length !== 0);
       })
     );
 
@@ -290,26 +521,96 @@
     // });
   };
 
-  const Lobby = () => {
+
+  const Difficulty = () => {
+    const BTS = ["Easy", "Medium", "Hard"];
+
     setHtml(
       $("#render"),
-      `<div>Renderizará el lobby<br><button>Game</button></div>`
+      `<div class='wh cs'>
+        ${BTS.map(v => `<button id=${v.toLowerCase()}>${v}</button>`).join("")}
+      </div>`
     );
 
-    // Agregar los eventos
-    $on($("button"), "click", () => {
-      console.log("Va al Game");
-      App("Game");
+    $$('button').forEach(btn => {
+      $on(btn, "click", (e) => {
+        console.log(e.target.id);
+      });
     });
   };
 
-  const App = (screen = "Lobby") => {
+
+  const Avatar = ({name, avatar}) => {
+    console.log({name, avatar});
+    return `<div class='cs' style="flex-direction: column;"><avatar>${AVATARS[avatar]}</avatar>${name}</div>`;
+  }
+
+  const Lobby = () => {
+    const avatarData = {
+      name : getValueFromCache("name", ""), 
+      avatar : getValueFromCache("avatar", 0)
+    };
+
+    const BTS = [
+      [
+        'Vs Bot',
+        'bot'
+      ],
+      [
+        'Two Players',
+        'two'
+      ],
+      [
+        'Play with friends',
+        'friend'
+      ],
+      [
+        'Play Online',
+        'online'
+      ]
+    ];
+
+    // Cuando tenga que jugar contra el roboto se usa este emoji: 🤖
+    // Cuando juegue contra otra persona en el mismo equipo: 👽
+
+
+    setHtml(
+      $("#render"),
+      `<div>
+        ${Avatar(avatarData)}
+        <div class=options>
+          ${BTS.map(v => `<button id=${v[1]}>${v[0]}</button>`).join("")}
+        </div>
+      </div>`
+    );
+
+    $$('.options > button').forEach(btn => {
+      $on(btn, "click", (e) => {
+        const type = e.target.id;
+        if (type !== "bot") {
+          App("Game", { type: "nothibg" });
+        } else {
+          App("Difficulty");
+        }
+      });
+    });
+
+
+    // Agregar los eventos
+    // $on($("button"), "click", () => {
+    //   console.log("Va al Game");
+    //   App("Game");
+    // });
+  };
+
+  const App = (screen = "Lobby", params = {}) => {
     const Handler = {
       Lobby,
       Game,
+      Difficulty
     };
 
-    Handler[screen]();
+    Handler[screen](params);
   };
 
   const meteorColors = {
@@ -373,7 +674,13 @@
     })}`
   );
 
-  App("Game");
+  // Establecer alugno valores en sesion storage
+  if(!ObjectKeys(getDataCache()).length) {
+    savePropierties("name", `Astronaut ${randomNumber(100, 999)}`);
+    savePropierties("avatar", randomNumber(0, AVATARS.length - 1));
+  }
+
+  App("Lobby");
 
   $on(document, "contextmenu", (event) => event.preventDefault());
   $on(window, "resize", onWindowResize);

@@ -98,3 +98,13 @@ board > meteor {
   transition: top .5s cubic-bezier(0.86, -0.02, 0.45, 1.35);
 }
 /* Fin estilos board */
+
+/* Para los estilos del avatar */
+avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 1px solid red;
+  font-size:5rem;
+  text-align:center;
+}
