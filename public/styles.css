@@ -58,7 +58,6 @@ div {
   }
 }
 
-
 .button {
   position: relative;
   margin: auto;
@@ -90,7 +89,11 @@ div {
   bottom: 2px;
   left: 2px;
   border-radius: 30px;
-  background-image: linear-gradient(170deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0));
+  background-image: linear-gradient(
+    170deg,
+    rgba(255, 255, 255, 0.3),
+    rgba(255, 255, 255, 0)
+  );
   pointer-events: none;
 }
 
@@ -102,15 +105,24 @@ meteor {
   border-radius: 100%;
   overflow: hidden;
   background: #bbacb0;
-  background-image: radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),radial-gradient(circle, #81767a 60%, rgba(255, 255, 255, 0) 61%),radial-gradient(circle, #938c8f 60%, rgba(255, 255, 255, 0) 61%);
+  background-image: radial-gradient(
+      circle,
+      #675c60 18%,
+      rgba(255, 255, 255, 0) 19%
+    ),
+    radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),
+    radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),
+    radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),
+    radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),
+    radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),
+    radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),
+    radial-gradient(circle, #81767a 60%, rgba(255, 255, 255, 0) 61%),
+    radial-gradient(circle, #938c8f 60%, rgba(255, 255, 255, 0) 61%);
   background-repeat: no-repeat;
-  background-size: 89% 85%, 60% 60%, 30% 30%, 15% 15%, 15% 15%, 15% 15%, 23% 23%, 120% 120%, 120% 120%;
-  background-position: -109% -82%, 115% -5%, 70% 42%, 59% 7%, 39% 52%, 55% 87%, 30% 77%, -60% 53%, 0 53%;
-}
-
-meteor.an {
-  animation: cr 60s infinite linear;
-  box-shadow: 0px 0px 20px 2px white;
+  background-size: 89% 85%, 60% 60%, 30% 30%, 15% 15%, 15% 15%, 15% 15%, 23% 23%,
+    120% 120%, 120% 120%;
+  background-position: -109% -82%, 115% -5%, 70% 42%, 59% 7%, 39% 52%, 55% 87%,
+    30% 77%, -60% 53%, 0 53%;
 }
 
 @keyframes cr {
@@ -125,13 +137,13 @@ meteor.an {
 
 /* Estilos para el board */
 board {
-  /* position: relative; */
-  position: absolute;
-  bottom: 50px;
+  position: relative;
+  /* position: absolute;
+  bottom: 50px; */
 }
 
 holes {
-  background: linear-gradient(to bottom, #C0C0C0 0%, #B1B1B1 100%);
+  background: linear-gradient(to bottom, #c0c0c0 0%, #b1b1b1 100%);
   border-radius: 10px;
   box-shadow: inset 0px 0px 9px 6px #6c6b6b;
   display: block;
@@ -147,7 +159,7 @@ holes > button {
 }
 
 board > meteor {
-  transition: top .5s cubic-bezier(0.86, -0.02, 0.45, 1.35);
+  transition: top 0.5s cubic-bezier(0.86, -0.02, 0.45, 1.35);
 }
 /* Fin estilos board */
 
@@ -163,10 +175,10 @@ avatar-image {
   border-radius: 50%;
   border: 5px solid black;
   box-shadow: 1px -1px 19px 1px white;
-  font-size:5rem;
+  font-size: 5rem;
   height: 100px;
   overflow: hidden;
-  text-align:center;
+  text-align: center;
   width: 100px;
 }
 
@@ -203,7 +215,9 @@ avatar-name button {
   /* color: #0066b685;
   text-shadow: 0 0 5px #FFF, 0 0 10px #FFF, 0 0 15px #FFF, 0 0 20px #2196f3, 0 0 30px #2196f3, 0 0 40px #2196f3, 0 0 55px #2196f3, 0 0 75px #2196f3; */
   /* color: #FFFFFF; */
-  text-shadow: #FFF 0px 0px 5px, #FFF 0px 0px 10px, #FFF 0px 0px 15px, #FF2D95 0px 0px 20px, #FF2D95 0px 0px 30px, #FF2D95 0px 0px 40px, #FF2D95 0px 0px 50px, #FF2D95 0px 0px 75px;
+  text-shadow: #fff 0px 0px 5px, #fff 0px 0px 10px, #fff 0px 0px 15px,
+    #ff2d95 0px 0px 20px, #ff2d95 0px 0px 30px, #ff2d95 0px 0px 40px,
+    #ff2d95 0px 0px 50px, #ff2d95 0px 0px 75px;
   margin-bottom: 30px;
 }
 /* fin de los estilos del logo */
