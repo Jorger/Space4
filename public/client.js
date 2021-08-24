@@ -200,6 +200,16 @@
       .map((_, c) =>
         new Array(NUM_COLS).fill(null).map((_, f) => callback(c, f))
       );
+
+  /**
+   * Dado el index del color, devolver el filtro que establecerá su color
+   * @param {*} index
+   * @returns
+   */
+  const setColorMeteor = (index) =>
+    `brightness(40%) sepia(100%) hue-rotate(${
+      index === 1 ? 183 : -50
+    }deg) saturate(600%)`;
   // fin de utilidades
 
   /**
@@ -214,8 +224,7 @@
   // columnas horizontal
 
   /**
-   * Renderiza el board base del juego
-   * También renderizará los meteoros
+   * Componente que muestra los hoyos que tiene el board
    * @returns
    */
   const BoardHoles = () =>
@@ -235,15 +244,20 @@
         .join("")}
     </holes>`;
 
+  /**
+   * Renderiza el board base del juego
+   * También renderizará los meteoros
+   * @returns
+   */
   const Board = () =>
     `<board ${inlineStyles({
-      width: `${METEOR_SIZE * 7}px`,
-      height: `${METEOR_SIZE * 6}px`,
+      width: `${METEOR_SIZE * NUM_COLS}px`,
+      height: `${METEOR_SIZE * NUM_ROWS}px`,
     })}>
       ${BoardHoles()}
       ${createGrid((c, f) =>
         Meteor({
-          id: `m-${f + c * 7}`,
+          id: `m-${f + c * NUM_COLS}`,
           style: {
             width: `${METEOR_SIZE * 0.63}px`,
             height: `${METEOR_SIZE * 0.63}px`,
@@ -254,6 +268,48 @@
         .map((v) => v.join(""))
         .join("")}
     </board>`;
+
+  /**
+   * Renderiza el espacio de lo jugadores
+   * @param {*} players
+   * @returns
+   */
+  const Gamers = (players = []) => `<div class=cs ${inlineStyles({
+    width: "100%",
+    "margin-bottom": "30px",
+  })}>
+    ${players
+      .map(
+        (player) => `<div ${inlineStyles({
+          width: "100%",
+          display: "flex",
+          "justify-content": "center",
+          "flex-direction": "column",
+          "align-items": "center",
+        })} id=${player.id}>
+        ${Avatar({
+          name: player.name,
+          avatar: {
+            image: player.image,
+          },
+        })}
+        <div class=cs>
+          ${Meteor({
+            style: {
+              filter: setColorMeteor(player.color),
+              width: "20px",
+              height: "20px",
+              position: "relative",
+              "margin-top": "10px",
+              animation: "cr 3s infinite linear",
+            },
+          })}
+          <div class=score>0</div>
+        </div>
+      </div>`
+      )
+      .join("")}
+    </div>`;
 
   // 16% de METEOR_SIZE
 
@@ -268,8 +324,37 @@
     let meteorCounter = 0;
     // Determina si una animación se está ejecuatando...
     let animationOn = false;
-    // Para el color
+    // Para el color del meteoro que se está lanzando
     let meteorColor = 1; // mejorar esta parte
+    // Para generar la data de los jugadores...
+    // Por defecto el jugador uno es el actual
+    const PLAYER_DATA = [
+      {
+        name: getValueFromCache("name", ""),
+        image: AVATARS[getValueFromCache("avatar", 0)],
+        id: getValueFromCache("token", ""),
+        color: 2,
+      },
+    ];
+
+    // Van a jugador dos personas
+    if (isTwoPlayers) {
+      PLAYER_DATA.push({
+        name: "Guest",
+        image: "👽",
+        id: "guest",
+        color: 1,
+      });
+    }
+
+    if (isBot) {
+      PLAYER_DATA.push({
+        name: "Mr. Bot",
+        image: "🤖",
+        id: "bot",
+        color: 1,
+      });
+    }
 
     // Guardará las conexiones que están cerca a cumplirse
     // útil para la IA
@@ -316,13 +401,44 @@
             ].map((v) => v.split("").map((n) => +n));
           }
         }
-
         console.log(possibleConnections);
       }
 
-      animationOn = false;
-      meteorCounter++;
-      meteorColor = meteorColor === 1 ? 2 : 1;
+      if (!response.connect) {
+        animationOn = false;
+        meteorCounter++;
+        meteorColor = meteorColor === 1 ? 2 : 1;
+      } else {
+        // En esta parte se muestra quien ganó
+        // Primero resaltar los meteoritos gaaradores...
+        const winningMeteorites = response.meteorites.map(
+          (v) => GRID[v[0]][v[1]][1]
+        );
+        console.log(winningMeteorites);
+
+        for (let i = 0; i <= meteorCounter; i++) {
+          addStyle(
+            $(`#m-${i}`),
+            winningMeteorites.includes(i)
+              ? {
+                  animation: `heartBeat 1.5s ease-out infinite`,
+                  "z-index": 1,
+                }
+              : {
+                  opacity: ".5",
+                }
+          );
+        }
+
+        // response.meteorites.forEach((v) => {
+        //   // console.log(GRID[v[0]][v[1]][1]);
+
+        // });
+
+        // const meteorites = response.meteorites;
+
+        console.log("JUEGO TERMINADO Y GANO: ", METEOR_COLORS[meteorColor - 1]);
+      }
 
       // Filtrar sólo aquellos que tengan base...
       // posible = posible.filter(v => v[0] + 1 === NUM_ROWS ? true : GRID[v[0] + 1][v[1]].length !== 0);
@@ -450,77 +566,77 @@
 
       // Si llega a este punto, es que no existe ninguna coincidencia
       // Por lo tanto se devolverá las cercanas...
+      // Sólo se ejecuta si es un bot, además que el nivel del juego sea medium or hard
+      if (isBot && (isBot === "Medium" || isBot === "Hard")) {
+        for (let counter = MAX_METEORITES - 1; counter >= 1; counter--) {
+          const possibleKey = `c-${MAX_METEORITES - counter}`;
+          posible[possibleKey] = [];
 
-      // TO-DO: Validar que sólo se haga esto si se está jugando Vs un bot
-      // Además que el nivel del juego sea medium or hard
-      for (let counter = MAX_METEORITES - 1; counter >= 1; counter--) {
-        const possibleKey = `c-${MAX_METEORITES - counter}`;
-        posible[possibleKey] = [];
-
-        // Para horizontal
-        if (possibleLines.h.length === MAX_METEORITES - counter) {
-          // debugger;
-          const posibleHorizontal = possibleLines.h.map((v) => v[1]).sort();
-          const limits = {
-            left: posibleHorizontal[0] - 1,
-            right: posibleHorizontal[posibleHorizontal.length - 1] + 1,
-          };
-
-          for (let times = 1; times <= 2; times++) {
-            const key = times === 1 ? "left" : "right";
-
-            if (
-              coordinateOnStage(row, limits[key]) &&
-              GRID[row][limits[key]].length === 0
-            ) {
-              posible[possibleKey].push([row, limits[key]]);
-            }
-          }
-        }
-
-        // // Vertical
-        if (possibleLines.v.length === MAX_METEORITES - counter) {
-          // debugger;
-          const topLimit = possibleLines.v[0][0] - 1;
-
-          if (
-            coordinateOnStage(topLimit, col) &&
-            GRID[topLimit][col].length === 0
-          ) {
-            posible[possibleKey].push([topLimit, col]);
-          }
-        }
-
-        // Para las diagonales...
-        for (let diagonal = 1; diagonal <= 2; diagonal++) {
-          const key = diagonal === 1 ? "id" : "di";
-
-          if (possibleLines[key].length === MAX_METEORITES - counter) {
+          // Para horizontal
+          if (possibleLines.h.length === MAX_METEORITES - counter) {
             // debugger;
-            const posibleDiagonal = possibleLines[key].sort(
-              (a, b) => a[0] - b[0]
-            );
+            const posibleHorizontal = possibleLines.h.map((v) => v[1]).sort();
+            const limits = {
+              left: posibleHorizontal[0] - 1,
+              right: posibleHorizontal[posibleHorizontal.length - 1] + 1,
+            };
 
             for (let times = 1; times <= 2; times++) {
-              const limits =
-                posibleDiagonal[times === 1 ? 0 : posibleDiagonal.length - 1];
-
-              const newRow = limits[0] + (times === 1 ? -1 : 1);
-              const newCol =
-                limits[1] +
-                (diagonal === 1
-                  ? times === 1
-                    ? -1
-                    : 1
-                  : times === 1
-                  ? 1
-                  : -1);
+              const key = times === 1 ? "left" : "right";
 
               if (
-                coordinateOnStage(newRow, newCol) &&
-                GRID[newRow][newCol].length === 0
+                coordinateOnStage(row, limits[key]) &&
+                GRID[row][limits[key]].length === 0
               ) {
-                posible[possibleKey].push([newRow, newCol]);
+                posible[possibleKey].push([row, limits[key]]);
+              }
+            }
+          }
+
+          // // Vertical
+          if (possibleLines.v.length === MAX_METEORITES - counter) {
+            // debugger;
+            const topLimit = possibleLines.v[0][0] - 1;
+
+            if (
+              coordinateOnStage(topLimit, col) &&
+              GRID[topLimit][col].length === 0
+            ) {
+              posible[possibleKey].push([topLimit, col]);
+            }
+          }
+
+          // Para las diagonales...
+          for (let diagonal = 1; diagonal <= 2; diagonal++) {
+            const key = diagonal === 1 ? "id" : "di";
+
+            if (possibleLines[key].length === MAX_METEORITES - counter) {
+              // debugger;
+              const posibleDiagonal = possibleLines[key].sort(
+                (a, b) => a[0] - b[0]
+              );
+
+              for (let times = 1; times <= 2; times++) {
+                const limits =
+                  posibleDiagonal[times === 1 ? 0 : posibleDiagonal.length - 1];
+
+                const newRow = limits[0] + (times === 1 ? -1 : 1);
+                const newCol =
+                  limits[1] +
+                  (diagonal === 1
+                    ? times === 1
+                      ? -1
+                      : 1
+                    : times === 1
+                    ? 1
+                    : -1);
+
+                if (
+                  coordinateOnStage(newRow, newCol) &&
+                  GRID[newRow][newCol].length === 0
+                ) {
+                  posible[possibleKey].push([newRow, newCol]);
+                }
               }
             }
           }
@@ -554,9 +670,7 @@
       addStyle(newMeteor, {
         left: `${BASE_POSITION + METEOR_SIZE * index}px`,
         top: `${(METEOR_SIZE + BASE_POSITION) * -1}px`,
-        filter: `brightness(40%) sepia(100%) hue-rotate(${
-          color === 1 ? 183 : -50
-        }deg) saturate(600%)`,
+        filter: setColorMeteor(color),
         visibility: "visible",
       });
 
@@ -594,25 +708,16 @@
     setHtml(
       $("#render"),
       `<div class='wh cs' ${inlineStyles({ "flex-direction": "column" })}>
-        <div class=cs ${inlineStyles({
-          "justify-content": "space-between",
-          width: "70%",
+        ${Gamers(PLAYER_DATA)}
+        <div id=turn ${inlineStyles({
+          "font-size": "30px",
           "margin-bottom": "30px",
-        })}>
-          ${Avatar({
-            name: getValueFromCache("name", ""),
-            avatar: {
-              image: AVATARS[getValueFromCache("avatar", 0)],
-            },
-          })}
-          ${Avatar({
-            name: "Mr. Bot",
-            avatar: { image: "🤖" },
-          })}
-        </div>
+        })}>Opponent's turn</div>
         ${Board()}
       </div>`
     );
+
+    // You turn, Opponent's turn
 
     // Crear los eventos para el click en los hoyos
     $$("holes > button").forEach((btn) =>
@@ -629,6 +734,9 @@
         )
       )
     );
+
+    // Para poder capturar el score
+    // document.querySelector("#guest .score").innerHTML = "2"
   };
 
   const Difficulty = () => {
@@ -799,7 +907,7 @@
         .fill(null)
         .map(() => `${randomNumber(1, 2000)}px ${randomNumber(1, 2000)}px #FFF`)
         .join(",")};
-      animation : animStar ${50 * index + 50}s linear infinite;
+      animation : aS ${50 * index + 50}s linear infinite;
     }`
     )
     .join("");
@@ -818,6 +926,7 @@
         height: `${BASE_WIDTH}px`,
         top: `${BASE_HEIGHT - BASE_WIDTH * 0.4}px`,
         "z-index": 2,
+        opacity: "0.7",
         animation: "cr 60s infinite linear",
         "box-shadow": "0px 0px 20px 2px white",
       },
@@ -838,7 +947,9 @@
 
   App();
   // App("Difficulty");
-  // App("Game");
+  // App("Game", {
+  //   isTwoPlayers: true,
+  // });
 
   $on(document, "contextmenu", (event) => event.preventDefault());
   $on(window, "resize", onWindowResize);
