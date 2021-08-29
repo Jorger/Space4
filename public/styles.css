@@ -45,9 +45,18 @@ div {
   background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
 }
 
-#render div.wh {
-  z-index: 3;
+a {
+  color: black;
+  font-weight: bold;
 }
+
+a:visited {
+  color: black;
+}
+
+/* #render div.wh {
+  z-index: 3;
+} */
 
 @keyframes aS {
   from {
@@ -58,9 +67,15 @@ div {
   }
 }
 
-@keyframes heartBeat {
+
+/* @keyframes scale {
+  0%   {transform: scale(.8);}
+  100% {transform: scale(1.5);}
+} */
+
+@keyframes beat {
   0% {
-    transform: scale(1);
+    transform: scale(.8);
   }
 
   14% {
@@ -68,7 +83,7 @@ div {
   }
 
   28% {
-    transform: scale(1);
+    transform: scale(.8);
   }
 
   42% {
@@ -76,7 +91,7 @@ div {
   }
 
   70% {
-    transform: scale(1);
+    transform: scale(.8);
   }
 }
 
@@ -268,3 +283,106 @@ avatar-name button {
   margin-bottom: 30px;
 }
 /* fin de los estilos del logo */
+
+/* Estilos para el modal */
+modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+}
+
+modal.hide {
+  pointer-events: none;
+  visibility: hidden;
+  transition: visibility 200ms;
+}
+
+modal.show {
+  visibility: visible;
+}
+
+.ms, .mw {
+  left: 0;
+  position: absolute;
+  top: 0;
+}
+
+.ms {
+  backdrop-filter: blur(5px);
+  /* background: rgb(28 33 125 / 26%); */
+  background : rgb(182 183 199 / 26%);
+  /* background-color: rgb(0 0 0 / 20%); */
+  
+}
+
+.mw {
+  z-index: 1;
+}
+
+.mc {
+  /* border: 1px solid red; */
+  border-radius: 5px;
+  /* height: 40%; */
+  overflow: hidden;
+  width: 71%;
+  background: white;
+  overflow: hidden;
+  /* border-radius: .25em .25em .4em .4em; */
+  /* text-align: center; */
+  /* box-shadow: 0 0 20px rgba(0, 0, 0, 0.2); */
+}
+
+.mc .txt {
+  color: #8f9cb5;
+  padding: 20px;
+  flex-direction: column;
+}
+
+.mb button {
+  width: 100%;
+  border: none;
+  height: 50px;
+  background: #fc7169;
+  cursor: pointer;
+  color: white;
+  text-transform: uppercase;
+}
+
+.mb button:nth-child(2) {
+  background: #b6bece;
+}
+
+modal.show .mc {
+  animation: fDown 200ms both;
+}
+
+modal.hide .mc {
+  animation: fUp 200ms both;
+}
+
+@keyframes fDown {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -100%, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes fUp {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+    transform: translate3d(0, -100%, 0);
+  }
+}
+
+
+/* fin estilos del modal */

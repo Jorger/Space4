@@ -209,6 +209,10 @@
   const setColorMeteor = (index) =>
     `brightness(40%) sepia(100%) hue-rotate(${index === 1 ? 183 : -50
     }deg) saturate(600%)`;
+
+
+  const generateLink = (label = "", url = "") => `<a title=${label} href=${url} target="_blank" rel="noopener noreferrer">${label}</a>`;
+
   // fin de utilidades
 
   /**
@@ -295,6 +299,11 @@
           }
         ${Avatar({
             name: player.name,
+            stylesImage: {
+              width: "80px",
+              height: "80px",
+              "font-size": "4rem"
+            },
             avatar: {
               image: player.image,
             }
@@ -317,10 +326,50 @@
       .join("")}
     </div>`;
 
+  const Modal = {
+    callback: () => { },
+    show({ txt, yes = "yes", no = "no", cb }) {
+      $("modal .txt").innerHTML = txt;
+      addStyle($("modal #btn1"), { display: yes ? "block" : "none" });
+      addStyle($("modal #btn2"), { display: no ? "block" : "none" });
+      $("modal #btn1").textContent = yes;
+      $("modal #btn2").textContent = no;
+      removeClass($("modal"), "hide");
+      addClass($("modal"), "show");
+      this.callback = cb;
+    },
+    hide() {
+      removeClass($("modal"), "show");
+      addClass($("modal"), "hide");
+    },
+    render: () => `<modal class="hide wh"><div class="ms wh"></div><div class="mw wh cs"><div class=mc><div class="wh cs txt"></div><div class="mb wh cs"><button id=btn1></button><button id=btn2></button></div></div></div></modal>`,
+    events() {
+      $$("modal button").forEach(btn => $on(btn, "click", (e) => {
+        this.hide();
+        this.callback && this.callback(e.target.id === "btn1");
+      }))
+    }
+  };
+
+  // const Modal = () => {
+  //   return {
+  //     render : `<modal class="show wh"><div class="ms wh"></div><div class="mw wh cs"><div class=mc><div class="wh txt"></div><div class="mb wh cs"><button id=btn1></button><button id=btn2></button></div></div></div></modal>`, 
+  //     events() {
+  //       // Para los eventos del modal...
+  //       $$("modal button").forEach(btn => {
+  //         $on(btn, "click", (e) => {
+  //           console.log(e.target.id);
+  //         });
+  //       })
+  //     }
+  //   }
+  // };
+
+
   // 16% de METEOR_SIZE
 
   const Game = (options) => {
-    const { isTwoPlayers = false, isBot = "", isOnline = {} } = options;
+    const { isTwoPlayers = false, isBot = "", numMeteorites = MAX_METEORITES, isOnline = {} } = options;
     // console.log("OPTIONS");
     // console.log(options);
     // console.log({ isTwoPlayers, isBot, isOnline });
@@ -355,6 +404,7 @@
         name: getValueFromCache("name", ""),
         image: AVATARS[getValueFromCache("avatar", 0)],
         color: isOffline ? randomNumber(1, 2) : 1,
+        score: 0
       },
     ];
 
@@ -363,10 +413,12 @@
         name: isTwoPlayers ? "Guest" : "Mr. Bot",
         image: isTwoPlayers ? "👽" : "🤖",
         color: isOffline ? (PLAYER_DATA[0].color === 1 ? 2 : 1) : 2,
+        score: 0
       });
 
       if (isBot) {
-        for (let counter = MAX_METEORITES - 1; counter >= 1; counter--) {
+        // Genera el orden de las posibles combinaciones para la "IA"
+        for (let counter = numMeteorites - 1; counter >= 1; counter--) {
           orderPossibleConnections.push(
             { c: METEOR_COLORS[PLAYER_DATA[1].color - 1], i: counter },
             { c: METEOR_COLORS[PLAYER_DATA[0].color - 1], i: counter }
@@ -374,8 +426,6 @@
         }
       }
     }
-
-    // console.log(PLAYER_DATA);
 
     // Guardará las conexiones que están cerca a cumplirse
     // útil para la IA
@@ -393,6 +443,10 @@
     const validateEndsMovement = (response) => {
       console.log("responde esto");
       console.log(response);
+      const showModal = {
+        show: false,
+        txt: ""
+      };
 
       // console.log("GRID");
       // console.log(GRID);
@@ -409,8 +463,8 @@
         }
 
         // Iterar sobre todos los posibles...
-        for (let counter = MAX_METEORITES - 1; counter >= 1; counter--) {
-          const possibleKey = `c-${MAX_METEORITES - counter}`;
+        for (let counter = numMeteorites - 1; counter >= 1; counter--) {
+          const possibleKey = `c-${numMeteorites - counter}`;
 
           if (!possibleConnections[color][possibleKey]) {
             possibleConnections[color][possibleKey] = [];
@@ -443,7 +497,8 @@
             showPlayerTurn();
           }
         } else {
-          console.log("MOSTRAR UN MENSAJE QUE SE HA QUEDADO EN TABLAS");
+          showModal.show = true;
+          showModal.txt = `<p ${inlineStyles({ "font-size": "3rem" })}>🤝</p><h2>Tied game</h2><p>Do you want to play again?</p>`;
         }
       } else {
         // En esta parte se muestra quien ganó
@@ -458,7 +513,7 @@
             $(`#m-${i}`),
             winningMeteorites.includes(i)
               ? {
-                animation: `heartBeat 1.5s ease-out infinite`,
+                animation: `beat 2s ease-out infinite`,
                 "z-index": 1,
               }
               : {
@@ -467,19 +522,21 @@
           );
         }
 
-        // response.meteorites.forEach((v) => {
-        //   // console.log(GRID[v[0]][v[1]][1]);
+        PLAYER_DATA[playerHasTurn - 1].score += 1;
+        $(`#player-${playerHasTurn} .score`).innerHTML = PLAYER_DATA[playerHasTurn - 1].score;
 
-        // });
-
-        // const meteorites = response.meteorites;
-
-        console.log("JUEGO TERMINADO Y GANO: ");
-        console.log(PLAYER_DATA[playerHasTurn - 1]);
+        showModal.show = true;
+        showModal.txt = `<p ${inlineStyles({ "font-size": "3rem" })}>${PLAYER_DATA[playerHasTurn - 1].image}</p><h2>${PLAYER_DATA[playerHasTurn - 1].name} has won</h2><p>Do you want to play again?</p>`;
       }
 
-      // Filtrar sólo aquellos que tengan base...
-      // posible = posible.filter(v => v[0] + 1 === NUM_ROWS ? true : GRID[v[0] + 1][v[1]].length !== 0);
+      if (showModal.show) {
+        Modal.show({
+          txt: showModal.txt,
+          cb(answer) {
+            answer ? resetGame() : Screen();
+          }
+        });
+      }
     };
 
     /**
@@ -514,8 +571,12 @@
         if (GRID[i][col][0] === currentColor) {
           possibleLines.v.push([i, col]);
 
-          if (possibleLines.v.length === MAX_METEORITES) {
-            break;
+          if (possibleLines.v.length === numMeteorites) {
+            return {
+              connect: true,
+              posible,
+              meteorites: possibleLines.v,
+            };
           }
         } else {
           break;
@@ -523,13 +584,9 @@
       }
 
       // Existe la cantidad de meteoritos en vertical
-      if (possibleLines.v.length === MAX_METEORITES) {
-        return {
-          connect: true,
-          posible,
-          meteorites: possibleLines.v,
-        };
-      }
+      // if (possibleLines.v.length === numMeteorites) {
+
+      // }
 
       // Ahora buscar en horizontal...
       possibleLines.h = [[row, col]];
@@ -543,8 +600,12 @@
             possibleLines.h.push([row, newCol]);
             newCol += times === 1 ? -1 : 1;
 
-            if (possibleLines.h.length === MAX_METEORITES) {
-              break;
+            if (possibleLines.h.length === numMeteorites) {
+              return {
+                connect: true,
+                posible,
+                meteorites: possibleLines.h,
+              };
             }
           } else {
             break;
@@ -552,14 +613,17 @@
         } while (1);
       }
 
+      // console.log("PARA HORIZONTAL");
+      // console.log(possibleLines.h);
+
       // Existe la cantidad de meteoritos en horizontal
-      if (possibleLines.h.length === MAX_METEORITES) {
-        return {
-          connect: true,
-          posible,
-          meteorites: possibleLines.h,
-        };
-      }
+      // if (possibleLines.h.length === numMeteorites) {
+      //   return {
+      //     connect: true,
+      //     posible,
+      //     meteorites: possibleLines.h,
+      //   };
+      // }
 
       // Para validar las diagonales
       for (let diagonal = 1; diagonal <= 2; diagonal++) {
@@ -584,8 +648,12 @@
               newRow += increments.row;
               newCol += increments.col;
 
-              if (possibleLines[key].length === MAX_METEORITES) {
-                break;
+              if (possibleLines[key].length === numMeteorites) {
+                return {
+                  connect: true,
+                  posible,
+                  meteorites: possibleLines[key],
+                };
               }
             } else {
               break;
@@ -593,25 +661,25 @@
           } while (1);
         }
 
-        if (possibleLines[key].length === MAX_METEORITES) {
-          return {
-            connect: true,
-            posible,
-            meteorites: possibleLines[key],
-          };
-        }
+        // if (possibleLines[key].length === numMeteorites) {
+        //   return {
+        //     connect: true,
+        //     posible,
+        //     meteorites: possibleLines[key],
+        //   };
+        // }
       }
 
       // Si llega a este punto, es que no existe ninguna coincidencia
       // Por lo tanto se devolverá las cercanas...
       // Sólo se ejecuta si es un bot, además que el nivel del juego sea medium or hard
       if (isBot && (isBot === "medium" || isBot === "hard")) {
-        for (let counter = MAX_METEORITES - 1; counter >= 1; counter--) {
-          const possibleKey = `c-${MAX_METEORITES - counter}`;
+        for (let counter = numMeteorites - 1; counter >= 1; counter--) {
+          const possibleKey = `c-${numMeteorites - counter}`;
           posible[possibleKey] = [];
 
           // Para horizontal
-          if (possibleLines.h.length === MAX_METEORITES - counter) {
+          if (possibleLines.h.length === numMeteorites - counter) {
             // debugger;
             const posibleHorizontal = possibleLines.h.map((v) => v[1]).sort();
             const limits = {
@@ -632,7 +700,7 @@
           }
 
           // // Vertical
-          if (possibleLines.v.length === MAX_METEORITES - counter) {
+          if (possibleLines.v.length === numMeteorites - counter) {
             // debugger;
             const topLimit = possibleLines.v[0][0] - 1;
 
@@ -648,7 +716,7 @@
           for (let diagonal = 1; diagonal <= 2; diagonal++) {
             const key = diagonal === 1 ? "id" : "di";
 
-            if (possibleLines[key].length === MAX_METEORITES - counter) {
+            if (possibleLines[key].length === numMeteorites - counter) {
               // debugger;
               const posibleDiagonal = possibleLines[key].sort(
                 (a, b) => a[0] - b[0]
@@ -700,6 +768,8 @@
 
       if (animationOn || newPosition < 0) return;
 
+      $("#turn").innerHTML = "...";
+
       const newMeteor = $(`#m-${meteorCounter}`);
       // Guarda el color en la grilla
       GRID[newPosition][index] = [color, meteorCounter];
@@ -719,9 +789,11 @@
 
       // Interrupción para indicar la posición de llegada
       setTimeout(() => {
-        addStyle(newMeteor, {
-          top: `${BASE_POSITION + METEOR_SIZE * newPosition}px`,
-        });
+        if (newMeteor) {
+          addStyle(newMeteor, {
+            top: `${BASE_POSITION + METEOR_SIZE * newPosition}px`,
+          });
+        }
       }, 100);
 
       // Establece que se está haciendo una animación de movimiento
@@ -864,26 +936,34 @@
     /**
      * Función que resetea el estado del juego...
      */
-    // const resetGame = () => {
-    // Solo cambiar el visibility
-    //   // Resetea las posiciones de los meteoros en el board
-    //   $$('board > meteor').forEach(mt => addStyle(mt, {visibility : 'hidden', left : 0, top : 0}));
-    //   // Resetear los valores de la matriz d ela grilla
-    // document.querySelector("#m-0").style = '';
-    // document.querySelector("#m-0").className = ''
-    //   GRID = createGrid(() => 0)
-    // };
+    const resetGame = () => {
+      // Se reinicia la grilla
+      GRID = createGrid(() => []);
+      // Ahora reiniciar los meteoritos
+      $$('board > meteor').forEach(mt => {
+        mt.style = '';
+        addStyle(mt, { width: `${METEOR_SIZE * 0.63}px`, height: `${METEOR_SIZE * 0.63}px`, visibility: "hidden" });
+      });
+      meteorCounter = 0;
+      animationOn = false;
+      playerStartsGame = playerStartsGame === 1 ? 2 : 1;
+      playerHasTurn = playerStartsGame;
+      disableUI = isOffline ? (!isTwoPlayers ? playerStartsGame === 2 : false) : false;
+      possibleConnections = {};
 
-    // Cuando tenga que jugar contra el roboto se usa este emoji: 🤖
-    // Cuando juegue contra otra persona en el mismo equipo: 👽
+      if (isOffline) {
+        showPlayerTurn();
+      }
+    };
 
     // Renderiza el html del juego
     setHtml(
       $("#render"),
-      `<div class='wh cs' ${inlineStyles({ "flex-direction": "column" })}>
+      `<div class='wh cs' ${inlineStyles({ "flex-direction": "column", "z-index": 3 })}>
+        ${ButtonBack({ left: "45%" })}
         ${Gamers(PLAYER_DATA, false)}
         <div id=turn ${inlineStyles({
-        "font-size": "30px",
+        "font-size": "25px",
         "margin-bottom": "30px",
       })}></div>
         ${Board()}
@@ -906,6 +986,18 @@
       )
     );
 
+    // Para el evento de regresar
+    $on($("#back"), "click", () => {
+      Modal.show({
+        txt: `<p ${inlineStyles({ "font-size": "3rem" })}>⁉️</p><h2 ${inlineStyles({ "margin-bottom": "10px" })}>Exit game</h2><p>Are you sure you want to finish the game?</p>`,
+        cb(answer) {
+          if (answer) {
+            Screen();
+          }
+        }
+      });
+    });
+
     // Establecer el intervalo...
     if (isOffline) {
       showPlayerTurn();
@@ -918,26 +1010,30 @@
     // document.querySelector("#guest .score").innerHTML = "2"
   };
 
+  const ButtonBack = (style = {}) => `<button id=back  ${inlineStyles({
+    position: "absolute",
+    left: "5%",
+    top: "5%",
+    "font-size": "20px",
+    background: "no-repeat",
+    color: "white",
+    border: 0,
+    cursor: "pointer",
+    "font-weight": "bold",
+    ...style
+  })}>Back</button>`;
+
   const Difficulty = () => {
     setHtml(
       $("#render"),
       `<div class='cs' ${inlineStyles({ "flex-direction": "column" })}>
-        <button id=back  ${inlineStyles({
-        position: "absolute",
-        left: "5%",
-        top: "5%",
-        "font-size": "20px",
-        background: "no-repeat",
-        color: "white",
-        border: 0,
-        cursor: "pointer",
-        "font-weight": "bold",
-      })}>Back</button>
+        ${ButtonBack()}
+        ${Logo()}
         <h2 ${inlineStyles({
-        "margin-bottom": "20px",
+        "margin": "30px 0",
         "text-align": "center",
         "text-transform": "uppercase",
-      })}>${getValueFromCache("name", "")}<br>CHOOSE DIFFICULTY</h2>
+      })}>CHOOSE DIFFICULTY</h2>
         ${["Easy", "Medium", "Hard"]
         .map(
           (v) =>
@@ -952,24 +1048,21 @@
 
     $$(".button").forEach((btn) => {
       $on(btn, "click", (e) => {
-        Screen("Game", {
-          isBot: e.target.id,
-        });
+        Screen("Game", { isBot: e.target.id });
       });
     });
 
-    $on($("#back"), "click", () => Screen("Lobby"));
+    $on($("#back"), "click", () => Screen());
   };
 
   const Logo = () => `<h1 class=logo>Space4</h1>`;
 
-  const AvatarImage = ({image = "", styles = {}}) => `<avatar-image ${inlineStyles(styles)}>${image}</avatar-image>`;
+  const AvatarImage = ({ image = "", styles = {} }) => `<avatar-image ${inlineStyles(styles)}>${image}</avatar-image>`;
 
   // Para el cargador de tiempo:
-  // https://codeconvey.com/css-percentage-circle/
   const Avatar = ({ name, stylesImage = {}, avatar = {}, edit = false }) =>
     `<avatar class=cs>
-      ${AvatarImage({ image : avatar.image, styles: stylesImage})}
+      ${AvatarImage({ image: avatar.image, styles: stylesImage })}
       <avatar-name>${edit ? `<button>${name}</button>` : name}</avatar-name>
       ${edit
       ? ` <select class=avatars>
@@ -1022,6 +1115,7 @@
         )
         .join("")}
         </div>
+        <a id="about" ${inlineStyles({ color: "white", "z-index": 2 })} href="#">About</a>
         ${Meteor({
           style: {
             width: `${BASE_WIDTH}px`,
@@ -1035,6 +1129,25 @@
       </div>`
     );
 
+    // Para el evento del about 
+    $on($("#about"), "click", (e) => {
+      e.preventDefault();
+      Modal.show({
+        txt: `<p ${inlineStyles({ "font-size": "3rem", "margin-bottom": "10px" })}>👨🏻‍💻</p>
+               <p>Game developed by Jorge Rubiano for the 2021 edition of ${generateLink("#js13k", "https://js13kgames.com/")}</p>
+               <div class=wh ${inlineStyles({ "padding": "15px" })}>
+                <ul>
+                  ${[["Twitter", "https://twitter.com/ostjh"],["Github", "https://github.com/Jorger"],["Linkedin", "https://www.linkedin.com/in/jorge-rubiano-a8616319"]
+                    ].map(v => `<li ${inlineStyles({ "margin-bottom": "5px" })}>${generateLink(v[0], v[1])} </li>`).join("")
+                  }
+                </ul>
+                </div>
+               `,
+        yes: "Ok",
+        no: ""
+      });
+    });
+
     $$(".options > button").forEach((btn) => {
       $on(btn, "click", (e) => {
         const type = e.target.id;
@@ -1044,6 +1157,22 @@
             isTwoPlayers: true,
           });
         }
+
+        // if(type === "friend") {
+        //   Modal.show({
+        //     txt : "<b>This is a test", 
+        //     yes : "ok", 
+        //     no : "No Thanks", 
+        //     cb(v) {
+        //       console.log(v);
+        //       if(v === "btn2") {
+        //         Modal.hide();
+        //       }
+        //     }
+        //   })
+        // };
+
+        // Modal
 
         if (type === "bot") {
           Screen("Difficulty");
@@ -1110,13 +1239,16 @@
   // Renderizar la base del juego...
   setHtml(
     $("#root"),
-    `<div id="render" class="wh cs"></div>
+    `${Modal.render()}
+    <div id="render" class="wh cs"></div>
     ${new Array(3)
       .fill(null)
       .map((_, i) => `<div class='star-${i}'></div>`)
       .join("")}
     `
   );
+
+  Modal.events();
 
   // "box-shadow": "0px 0px 20px 2px white",
 
