@@ -27,7 +27,7 @@
   ];
   const METEOR_COLORS = ["blue", "red"];
   const CACHE_KEY = "space-four";
-  $("html").style.cssText += `--h: ${BASE_HEIGHT}px; --w: ${BASE_WIDTH}px`;
+  $("html").style.cssText += `--h: ${BASE_HEIGHT}px; --w: ${BASE_WIDTH}px; --turn: red;`;
   const setHtml = (element, html) => (element.innerHTML = html);
   const ObjectKeys = (obj) => Object.keys(obj);
 
@@ -105,13 +105,13 @@
     }
   };
 
-  // const removeClass = (target, className) => {
-  //   if (target) {
-  //     className.split(' ').forEach((classText) => {
-  //       target.classList.remove(classText);
-  //     });
-  //   }
-  // };
+  const removeClass = (target, className) => {
+    if (target) {
+      className.split(" ").forEach((classText) => {
+        target.classList.remove(classText);
+      });
+    }
+  };
 
   /**
    * Eliminar un evento
@@ -152,8 +152,8 @@
   const inlineStyles = (styles) =>
     ObjectKeys(styles).length
       ? `style='${ObjectKeys(styles)
-          .map((v) => `${v}:${styles[v]}`)
-          .join(";")}'`
+        .map((v) => `${v}:${styles[v]}`)
+        .join(";")}'`
       : "";
 
   /**
@@ -207,8 +207,7 @@
    * @returns
    */
   const setColorMeteor = (index) =>
-    `brightness(40%) sepia(100%) hue-rotate(${
-      index === 1 ? 183 : -50
+    `brightness(40%) sepia(100%) hue-rotate(${index === 1 ? 183 : -50
     }deg) saturate(600%)`;
   // fin de utilidades
 
@@ -234,14 +233,14 @@
       "-webkit-mask-position": `${METEOR_SIZE}px ${METEOR_SIZE}px`,
     })}>
       ${new Array(NUM_COLS)
-        .fill(null)
-        .map(
-          (_, i) =>
-            `<button id='h-${i}' ${inlineStyles({
-              width: `${METEOR_SIZE}px`,
-            })}></button>`
-        )
-        .join("")}
+      .fill(null)
+      .map(
+        (_, i) =>
+          `<button id='h-${i}' ${inlineStyles({
+            width: `${METEOR_SIZE}px`,
+          })}></button>`
+      )
+      .join("")}
     </holes>`;
 
   /**
@@ -256,17 +255,17 @@
     })}>
       ${BoardHoles()}
       ${createGrid((c, f) =>
-        Meteor({
-          id: `m-${f + c * NUM_COLS}`,
-          style: {
-            width: `${METEOR_SIZE * 0.63}px`,
-            height: `${METEOR_SIZE * 0.63}px`,
-            visibility: "hidden",
-          },
-        })
-      )
-        .map((v) => v.join(""))
-        .join("")}
+      Meteor({
+        id: `m-${f + c * NUM_COLS}`,
+        style: {
+          width: `${METEOR_SIZE * 0.63}px`,
+          height: `${METEOR_SIZE * 0.63}px`,
+          visibility: "hidden",
+        },
+      })
+    )
+      .map((v) => v.join(""))
+      .join("")}
     </board>`;
 
   /**
@@ -274,25 +273,32 @@
    * @param {*} players
    * @returns
    */
-  const Gamers = (players = []) => `<div class=cs ${inlineStyles({
+  const Gamers = (players = [], isOnline = false) => `<div class=cs ${inlineStyles({
     width: "100%",
     "margin-bottom": "30px",
   })}>
     ${players
       .map(
-        (player) => `<div ${inlineStyles({
+        (player, index) => `<div ${inlineStyles({
           width: "100%",
           display: "flex",
           "justify-content": "center",
           "flex-direction": "column",
           "align-items": "center",
-        })} id=${player.id}>
+          "position": "relative"
+        })} id=player-${index + 1}>
+          ${isOnline ? `
+            <svg class="progress-ring" width="120" height="120" ${inlineStyles({ position: "absolute", "z-index": 1, top: "-5px" })}>
+              <circle class="progress-ring__circle" stroke="${METEOR_COLORS[player.color - 1]}" stroke-width="4" fill="transparent" r="52" cx="60" cy="60"/>
+            </svg>
+            ` : ""
+          }
         ${Avatar({
-          name: player.name,
-          avatar: {
-            image: player.image,
-          },
-        })}
+            name: player.name,
+            avatar: {
+              image: player.image,
+            }
+          })}
         <div class=cs>
           ${Meteor({
             style: {
@@ -315,46 +321,61 @@
 
   const Game = (options) => {
     const { isTwoPlayers = false, isBot = "", isOnline = {} } = options;
-    console.log("OPTIONS");
-    console.log(options);
-    console.log({ isTwoPlayers, isBot, isOnline });
+    // console.log("OPTIONS");
+    // console.log(options);
+    // console.log({ isTwoPlayers, isBot, isOnline });
     // {isOnline : {activated : false}, isBot : {activated : false}, isTwoPlayers : {activated : false}}
+    // Determina si es una partida offline, bien por que sean dos juagdores y por que es versus un bot
+    const isOffline = !!(isTwoPlayers || isBot);
     // La grila dle juego...
     let GRID = createGrid(() => []);
+    // El contador de meteoros que se va mostrando en la pantalla.
     let meteorCounter = 0;
     // Determina si una animación se está ejecuatando...
     let animationOn = false;
+    // Se debe determinar que jugar inicia la partida, esta variable cambiará, cada vez que se reinicie el juego
+    // Cuando sea online a está variable le llegará el usuario que inició la partida...
+    let playerStartsGame = isOffline ? randomNumber(1, 2) : 1;
+    // let playerStartsGame = isOffline ? 1 : 1;
+    // console.log({playerStartsGame});
     // Para el color del meteoro que se está lanzando
-    let meteorColor = 1; // mejorar esta parte
+    // INCIALMENTE ES EL MISMO COLOR QUE playerStartsGame
+    let playerHasTurn = playerStartsGame;
+    // Variable que indica si se debe o no deshabilitar la ui
+    // Si inicia el bot debe estar bloqueado, si en la versión online inicia el otro jugador también debe estar bloqueado
+    // Está variable se debe reiniciar cada vez que se reinice el juego
+    let disableUI = isOffline ? (!isTwoPlayers ? playerStartsGame === 2 : false) : false;
+    // Para crear el orden de validación de los posibles movimientos de la "IA"
+    const orderPossibleConnections = [];
+
     // Para generar la data de los jugadores...
     // Por defecto el jugador uno es el actual
     const PLAYER_DATA = [
       {
         name: getValueFromCache("name", ""),
         image: AVATARS[getValueFromCache("avatar", 0)],
-        id: getValueFromCache("token", ""),
-        color: 2,
+        color: isOffline ? randomNumber(1, 2) : 1,
       },
     ];
 
-    // Van a jugador dos personas
-    if (isTwoPlayers) {
+    if (isOffline) {
       PLAYER_DATA.push({
-        name: "Guest",
-        image: "👽",
-        id: "guest",
-        color: 1,
+        name: isTwoPlayers ? "Guest" : "Mr. Bot",
+        image: isTwoPlayers ? "👽" : "🤖",
+        color: isOffline ? (PLAYER_DATA[0].color === 1 ? 2 : 1) : 2,
       });
+
+      if (isBot) {
+        for (let counter = MAX_METEORITES - 1; counter >= 1; counter--) {
+          orderPossibleConnections.push(
+            { c: METEOR_COLORS[PLAYER_DATA[1].color - 1], i: counter },
+            { c: METEOR_COLORS[PLAYER_DATA[0].color - 1], i: counter }
+          )
+        }
+      }
     }
 
-    if (isBot) {
-      PLAYER_DATA.push({
-        name: "Mr. Bot",
-        image: "🤖",
-        id: "bot",
-        color: 1,
-      });
-    }
+    // console.log(PLAYER_DATA);
 
     // Guardará las conexiones que están cerca a cumplirse
     // útil para la IA
@@ -370,13 +391,18 @@
      * @param {*} response
      */
     const validateEndsMovement = (response) => {
-      // console.log("responde esto");
+      console.log("responde esto");
       console.log(response);
+
+      // console.log("GRID");
+      // console.log(GRID);
+
+      // console.log(getAvailableSlots());
 
       // Guarda los posibles movimientos
       // útil para la validación de tipo IA
       if (ObjectKeys(response.posible).length) {
-        const color = METEOR_COLORS[meteorColor - 1];
+        const color = METEOR_COLORS[PLAYER_DATA[playerHasTurn - 1].color - 1];
 
         if (!possibleConnections[color]) {
           possibleConnections[color] = {};
@@ -401,13 +427,24 @@
             ].map((v) => v.split("").map((n) => +n));
           }
         }
-        console.log(possibleConnections);
+        // console.log(possibleConnections);
       }
 
       if (!response.connect) {
-        animationOn = false;
-        meteorCounter++;
-        meteorColor = meteorColor === 1 ? 2 : 1;
+        // Se debe validar si hay slots disponibles...
+        if (getAvailableSlots().length !== 0) {
+          animationOn = false;
+          meteorCounter++;
+          playerHasTurn = playerHasTurn === 1 ? 2 : 1;
+
+          if (isOffline) {
+            // Se debe validar cuando se este jugando online
+            disableUI = isBot && playerHasTurn === 2;
+            showPlayerTurn();
+          }
+        } else {
+          console.log("MOSTRAR UN MENSAJE QUE SE HA QUEDADO EN TABLAS");
+        }
       } else {
         // En esta parte se muestra quien ganó
         // Primero resaltar los meteoritos gaaradores...
@@ -421,12 +458,12 @@
             $(`#m-${i}`),
             winningMeteorites.includes(i)
               ? {
-                  animation: `heartBeat 1.5s ease-out infinite`,
-                  "z-index": 1,
-                }
+                animation: `heartBeat 1.5s ease-out infinite`,
+                "z-index": 1,
+              }
               : {
-                  opacity: ".5",
-                }
+                opacity: ".5",
+              }
           );
         }
 
@@ -437,7 +474,8 @@
 
         // const meteorites = response.meteorites;
 
-        console.log("JUEGO TERMINADO Y GANO: ", METEOR_COLORS[meteorColor - 1]);
+        console.log("JUEGO TERMINADO Y GANO: ");
+        console.log(PLAYER_DATA[playerHasTurn - 1]);
       }
 
       // Filtrar sólo aquellos que tengan base...
@@ -567,7 +605,7 @@
       // Si llega a este punto, es que no existe ninguna coincidencia
       // Por lo tanto se devolverá las cercanas...
       // Sólo se ejecuta si es un bot, además que el nivel del juego sea medium or hard
-      if (isBot && (isBot === "Medium" || isBot === "Hard")) {
+      if (isBot && (isBot === "medium" || isBot === "hard")) {
         for (let counter = MAX_METEORITES - 1; counter >= 1; counter--) {
           const possibleKey = `c-${MAX_METEORITES - counter}`;
           posible[possibleKey] = [];
@@ -628,8 +666,8 @@
                       ? -1
                       : 1
                     : times === 1
-                    ? 1
-                    : -1);
+                      ? 1
+                      : -1);
 
                 if (
                   coordinateOnStage(newRow, newCol) &&
@@ -656,8 +694,10 @@
     const selectedColumn = (index = 0, color = 1) => {
       // Primero determinar la posición a donde llegaría el meteoro,
       // dependiendo de los valores qu existan en la grilla...
+      // console.log({index, color});
       const newPosition =
         GRID.map((v) => v[index]).filter((v) => !v.length).length - 1;
+
       if (animationOn || newPosition < 0) return;
 
       const newMeteor = $(`#m-${meteorCounter}`);
@@ -688,6 +728,139 @@
       animationOn = true;
     };
 
+    const showPlayerTurn = () => {
+      document.documentElement.style.setProperty("--turn", METEOR_COLORS[PLAYER_DATA[playerHasTurn - 1].color - 1]);
+      const opposite = playerHasTurn === 1 ? 2 : 1;
+      addClass($(`#player-${playerHasTurn} avatar-image`), "blink");
+      removeClass($(`#player-${opposite} avatar-image`), "blink");
+
+      $("#turn").innerHTML = playerHasTurn === 1 ? "You turn" : "Opponent's turn";
+
+      if (isBot && playerHasTurn === 2) {
+        botTurn();
+        // console.log("lanzamiento del bot");
+      }
+
+      // Si el que etsá inciiando es un bot, es el que hace el lanzamiento primero...
+      // if(isBot) {
+      //   botTurn
+      // }
+
+
+
+      // document.documentElement.style.setProperty("--base-height", `${BASE_HEIGHT}px`);
+    };
+
+
+
+    /**
+     * Función que indica que slots de la matriz están disponibles
+     */
+    const getAvailableSlots = () => {
+      const available = [];
+
+      for (let i = 0; i < NUM_COLS; i++) {
+        let counter = 0;
+        for (let c = 0; c < NUM_ROWS; c++) {
+          counter += +(GRID[c][i].length === 0);
+        }
+
+        if (counter !== 0) {
+          available.push(i);
+        }
+      }
+
+      return available;
+    }
+
+    /**
+     * Función que retorna un movimiento aleatorio para el juego
+     */
+    const getRandomMove = () => {
+      const availableSlots = getAvailableSlots();
+      // console.log(availableSlots);
+      return availableSlots[randomNumber(0, availableSlots.length - 1)];
+    }
+
+
+    /**
+     * Función que valida si un meteoro tiene una base
+     * @param {*} row 
+     * @param {*} col 
+     * @returns 
+     */
+    const validateMeteorBase = (row, col) => row + 1 === NUM_ROWS ? true : GRID[row + 1][col].length !== 0
+
+    /**
+     * Función que realiza el lanzamiento de un bot
+     */
+    const botTurn = debounce(() => {
+      let positionIndex = getRandomMove();
+      const playerColor = METEOR_COLORS[PLAYER_DATA[0].color - 1];
+      const botColor = METEOR_COLORS[PLAYER_DATA[1].color - 1];
+      let findPossibleMovement = false;
+      // Valida si realiza el proceso de predecir el movimiento
+      // Si es de tipo medium, será aleatorio
+      // EN hard siempre buscará hacer la predicción
+      const predictsMovement = isBot !== "easy" ? (isBot === "medium" ? !!(randomNumber(0, 1)) : true) : false;
+      // console.log({predictsMovement});
+
+      if (ObjectKeys(possibleConnections).length !== 0 && predictsMovement) {
+        console.log("LOS POSIBLES MOVIMIENTOS");
+        console.log(JSON.parse(JSON.stringify(possibleConnections)));
+        console.log({ botColor, playerColor });
+        console.log("orderPossibleConnections");
+        console.log(orderPossibleConnections);
+        console.log(GRID);
+
+        for (let item of orderPossibleConnections) {
+          if (possibleConnections[item.c]) {
+            const positions = possibleConnections[item.c][`c-${item.i}`];
+            // Para sacar del listado las posiciones que ya no sirven o que se han usado...
+            const removePossibleOptions = [];
+
+            if (positions.length !== 0) {
+              // debugger;
+              // console.log(item);
+              // console.log(positions);
+              for (let i = 0; i < positions.length; i++) {
+                console.log("Las posiciones: ", positions[i]);
+                // Primero saber si la posición está disponible
+                console.log("LA grila: ", GRID[positions[i][0]][positions[i][1]]);
+                if (GRID[positions[i][0]][positions[i][1]].length === 0) {
+                  // Ahora saber si tiene base
+                  if (validateMeteorBase(positions[i][0], positions[i][1])) {
+                    // Si tiene base...
+                    positionIndex = positions[i][1];
+                    removePossibleOptions.push(i);
+                    findPossibleMovement = true;
+                    break;
+                  }
+                } else {
+                  removePossibleOptions.push(i);
+                }
+              }
+            }
+
+            // Eliminar los que ya no son necesarios...
+            for (let i = 0; i < removePossibleOptions.length; i++) {
+              possibleConnections[item.c][`c-${item.i}`].splice(removePossibleOptions[i], 1);
+            }
+
+            if (findPossibleMovement) {
+              break;
+            }
+          }
+        }
+
+        console.log("DESPUÉS");
+        console.log(possibleConnections);
+      }
+
+      selectedColumn(positionIndex, PLAYER_DATA[playerHasTurn - 1].color);
+
+    }, 500);
+
     /**
      * Función que resetea el estado del juego...
      */
@@ -708,21 +881,19 @@
     setHtml(
       $("#render"),
       `<div class='wh cs' ${inlineStyles({ "flex-direction": "column" })}>
-        ${Gamers(PLAYER_DATA)}
+        ${Gamers(PLAYER_DATA, false)}
         <div id=turn ${inlineStyles({
-          "font-size": "30px",
-          "margin-bottom": "30px",
-        })}>Opponent's turn</div>
+        "font-size": "30px",
+        "margin-bottom": "30px",
+      })}></div>
         ${Board()}
       </div>`
     );
 
-    // You turn, Opponent's turn
-
     // Crear los eventos para el click en los hoyos
     $$("holes > button").forEach((btn) =>
       $on(btn, "click", (e) =>
-        selectedColumn(+e.target.id.split("-")[1], meteorColor)
+        !disableUI && selectedColumn(+e.target.id.split("-")[1], PLAYER_DATA[playerHasTurn - 1].color)
       )
     );
 
@@ -735,6 +906,14 @@
       )
     );
 
+    // Establecer el intervalo...
+    if (isOffline) {
+      showPlayerTurn();
+    }
+
+    // Para los eventos de los gamers...
+
+
     // Para poder capturar el score
     // document.querySelector("#guest .score").innerHTML = "2"
   };
@@ -744,68 +923,64 @@
       $("#render"),
       `<div class='cs' ${inlineStyles({ "flex-direction": "column" })}>
         <button id=back  ${inlineStyles({
-          position: "absolute",
-          left: "5%",
-          top: "5%",
-          "font-size": "20px",
-          background: "no-repeat",
-          color: "white",
-          border: 0,
-          cursor: "pointer",
-          "font-weight": "bold",
-        })}>Back</button>
+        position: "absolute",
+        left: "5%",
+        top: "5%",
+        "font-size": "20px",
+        background: "no-repeat",
+        color: "white",
+        border: 0,
+        cursor: "pointer",
+        "font-weight": "bold",
+      })}>Back</button>
         <h2 ${inlineStyles({
-          "margin-bottom": "20px",
-          "text-align": "center",
-          "text-transform": "uppercase",
-        })}>${getValueFromCache("name", "")}<br>CHOOSE DIFFICULTY</h2>
+        "margin-bottom": "20px",
+        "text-align": "center",
+        "text-transform": "uppercase",
+      })}>${getValueFromCache("name", "")}<br>CHOOSE DIFFICULTY</h2>
         ${["Easy", "Medium", "Hard"]
-          .map(
-            (v) =>
-              `<button class=button id=${v.toLowerCase()} ${inlineStyles({
-                width: "150px",
-                "margin-bottom": "20px",
-              })}>${v}</button>`
-          )
-          .join("")}
+        .map(
+          (v) =>
+            `<button class=button id=${v.toLowerCase()} ${inlineStyles({
+              width: "150px",
+              "margin-bottom": "20px",
+            })}>${v}</button>`
+        )
+        .join("")}
       </div>`
     );
 
     $$(".button").forEach((btn) => {
       $on(btn, "click", (e) => {
-        App("Game", {
+        Screen("Game", {
           isBot: e.target.id,
         });
       });
     });
 
-    $on($("#back"), "click", () => App("Lobby"));
+    $on($("#back"), "click", () => Screen("Lobby"));
   };
 
   const Logo = () => `<h1 class=logo>Space4</h1>`;
 
+  const AvatarImage = ({image = "", styles = {}}) => `<avatar-image ${inlineStyles(styles)}>${image}</avatar-image>`;
+
   // Para el cargador de tiempo:
   // https://codeconvey.com/css-percentage-circle/
-  const Avatar = ({ name, avatar = {}, edit = false }) =>
+  const Avatar = ({ name, stylesImage = {}, avatar = {}, edit = false }) =>
     `<avatar class=cs>
-      <avatar-image>
-        ${avatar.image}
-      </avatar-image>
-      <avatar-name>
-        ${edit ? `<button>${name}</button>` : name}
-      </avatar-name>
-      ${
-        edit
-          ? ` <select class=avatars>
-                  ${AVATARS.map(
-                    (v, i) =>
-                      `<option value=${i}${
-                        avatar.index === i ? " selected" : ""
-                      }>${v}</option>`
-                  ).join("")}
+      ${AvatarImage({ image : avatar.image, styles: stylesImage})}
+      <avatar-name>${edit ? `<button>${name}</button>` : name}</avatar-name>
+      ${edit
+      ? ` <select class=avatars>
+      ${AVATARS.map(
+        (v, i) =>
+          `<option value=${i}${avatar.index === i ? " selected" : ""
+          }>${v}</option>`
+      ).join("")}
                 </select>`
-          : ""
-      }
+      : ""
+    }
       </avatar>`;
 
   /**
@@ -820,32 +995,43 @@
       })}>
         ${Logo()}
         ${Avatar({
-          name: getValueFromCache("name", ""),
-          avatar: {
-            image: AVATARS[getValueFromCache("avatar", 0)],
-            index: getValueFromCache("avatar", 0),
-          },
-          edit: true,
-        })}
+        name: getValueFromCache("name", ""),
+        avatar: {
+          image: AVATARS[getValueFromCache("avatar", 0)],
+          index: getValueFromCache("avatar", 0),
+        },
+        edit: true,
+      })}
         <div class='cs options' ${inlineStyles({
-          "flex-direction": "column",
-          "margin-top": "25px",
-        })}>
+        "flex-direction": "column",
+        "margin-top": "25px",
+        "z-index": 2,
+      })}>
           ${[
-            ["Vs Bot", "bot"],
-            ["Two Players", "two"],
-            ["Play with friends", "friend"],
-            ["Play Online", "online"],
-          ]
-            .map(
-              (v) =>
-                `<button class=button id=${v[1]} ${inlineStyles({
-                  width: "260px",
-                  "margin-bottom": "20px",
-                })}>${v[0]}</button>`
-            )
-            .join("")}
+        ["Vs Bot", "bot"],
+        ["Two Players", "two"],
+        ["Play with friends", "friend"],
+        ["Play Online", "online"],
+      ]
+        .map(
+          (v) =>
+            `<button class=button id=${v[1]} ${inlineStyles({
+              width: "260px",
+              "margin-bottom": "20px",
+            })}>${v[0]}</button>`
+        )
+        .join("")}
         </div>
+        ${Meteor({
+          style: {
+            width: `${BASE_WIDTH}px`,
+            height: `${BASE_WIDTH}px`,
+            top: `${BASE_HEIGHT - BASE_WIDTH * 0.4}px`,
+            "z-index": 1,
+            opacity: "0.7",
+            animation: "cr 60s infinite linear"
+          },
+        })}
       </div>`
     );
 
@@ -854,13 +1040,13 @@
         const type = e.target.id;
 
         if (type === "two") {
-          App("Game", {
+          Screen("Game", {
             isTwoPlayers: true,
           });
         }
 
         if (type === "bot") {
-          App("Difficulty");
+          Screen("Difficulty");
         }
       });
     });
@@ -886,7 +1072,12 @@
     });
   };
 
-  const App = (screen = "Lobby", params = {}) => {
+  /**
+   * Indica la pantalla que se debe renderizar
+   * @param {*} screen 
+   * @param {*} params 
+   */
+  const Screen = (screen = "Lobby", params = {}) => {
     const Handler = {
       Lobby,
       Game,
@@ -896,7 +1087,7 @@
     Handler[screen](params);
   };
 
-  const starsStyle = [300, 200, 100]
+  const starsStyle = [600, 300, 200]
     .map(
       (v, index) =>
         `.star-${index} {
@@ -904,9 +1095,9 @@
       height: 1px;
       background: transparent;
       box-shadow: ${new Array(v)
-        .fill(null)
-        .map(() => `${randomNumber(1, 2000)}px ${randomNumber(1, 2000)}px #FFF`)
-        .join(",")};
+          .fill(null)
+          .map(() => `${randomNumber(1, 2000)}px ${randomNumber(1, 2000)}px #FFF`)
+          .join(",")};
       animation : aS ${50 * index + 50}s linear infinite;
     }`
     )
@@ -920,23 +1111,14 @@
   setHtml(
     $("#root"),
     `<div id="render" class="wh cs"></div>
-    ${Meteor({
-      style: {
-        width: `${BASE_WIDTH}px`,
-        height: `${BASE_WIDTH}px`,
-        top: `${BASE_HEIGHT - BASE_WIDTH * 0.4}px`,
-        "z-index": 2,
-        opacity: "0.7",
-        animation: "cr 60s infinite linear",
-        "box-shadow": "0px 0px 20px 2px white",
-      },
-    })}
     ${new Array(3)
       .fill(null)
       .map((_, i) => `<div class='star-${i}'></div>`)
       .join("")}
     `
   );
+
+  // "box-shadow": "0px 0px 20px 2px white",
 
   // Establecer alugno valores en sesion storage
   if (!ObjectKeys(getDataCache()).length) {
@@ -945,9 +1127,9 @@
     savePropierties("token", guid());
   }
 
-  App();
-  // App("Difficulty");
-  // App("Game", {
+  Screen();
+  // Screen("Difficulty");
+  // Screen("Game", {
   //   isTwoPlayers: true,
   // });
 

@@ -166,6 +166,7 @@ board {
 
 holes {
   background: linear-gradient(to bottom, #c0c0c0 0%, #b1b1b1 100%);
+  /* background: linear-gradient(to bottom, #ffeb3b 0%, #009688 100%); */
   border-radius: 10px;
   box-shadow: inset 0px 0px 9px 6px #6c6b6b;
   display: block;
@@ -187,21 +188,33 @@ board > meteor {
 
 /* Para los estilos del avatar */
 
+.progress-ring__circle {
+  transition: 0.35s stroke-dashoffset;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
 avatar {
   flex-direction: column;
   position: relative;
 }
 
 avatar-image {
-  background: #b0b4b6;
+  background: #bbacb0;
   border-radius: 50%;
-  border: 5px solid black;
+  border: 5px solid white;
   box-shadow: 1px -1px 19px 1px white;
   font-size: 5rem;
   height: 100px;
   overflow: hidden;
   text-align: center;
   width: 100px;
+  /* background: linear-gradient(145deg, #f0f0f0, #cacaca);
+  box-shadow: 11px 12px 60px #bebebe, -15px -11px 60px #ffffff; */
+}
+
+avatar-image.blink {
+  animation: blink 1s linear infinite;
 }
 
 .avatars {
@@ -234,6 +247,11 @@ avatar-name button {
   margin-left: 10px;
   font-weight: bold;
   margin-top: 10px;
+}
+
+@keyframes blink {
+  25% { box-shadow: 0 0 30px 11px var(--turn); }
+  75% { box-shadow: 0 0 0 transparent; }
 }
 
 /* Fin de los estilos del avatar */
