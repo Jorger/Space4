@@ -162,6 +162,10 @@ meteor {
     30% 77%, -60% 53%, 0 53%;
 }
 
+#m-global {
+  transition: top 0.5s cubic-bezier(0.86, -0.02, 0.45, 1.35);
+}
+
 @keyframes cr {
   from {
     transform: rotate(0deg);
@@ -311,7 +315,7 @@ modal.show {
 .ms {
   backdrop-filter: blur(5px);
   /* background: rgb(28 33 125 / 26%); */
-  background : rgb(182 183 199 / 26%);
+  background : #b6b7c742;
   /* background-color: rgb(0 0 0 / 20%); */
   
 }
@@ -347,6 +351,7 @@ modal.show {
   cursor: pointer;
   color: white;
   text-transform: uppercase;
+  font-weight: bold;
 }
 
 .mb button:nth-child(2) {
