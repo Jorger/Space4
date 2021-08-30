@@ -67,7 +67,6 @@ a:visited {
   }
 }
 
-
 /* @keyframes scale {
   0%   {transform: scale(.8);}
   100% {transform: scale(1.5);}
@@ -75,7 +74,7 @@ a:visited {
 
 @keyframes beat {
   0% {
-    transform: scale(.8);
+    transform: scale(0.8);
   }
 
   14% {
@@ -83,7 +82,7 @@ a:visited {
   }
 
   28% {
-    transform: scale(.8);
+    transform: scale(0.8);
   }
 
   42% {
@@ -91,7 +90,7 @@ a:visited {
   }
 
   70% {
-    transform: scale(.8);
+    transform: scale(0.8);
   }
 }
 
@@ -269,8 +268,12 @@ avatar-name button {
 }
 
 @keyframes blink {
-  25% { box-shadow: 0 0 30px 11px var(--turn); }
-  75% { box-shadow: 0 0 0 transparent; }
+  25% {
+    box-shadow: 0 0 30px 11px var(--turn);
+  }
+  75% {
+    box-shadow: 0 0 0 transparent;
+  }
 }
 
 /* Fin de los estilos del avatar */
@@ -306,7 +309,8 @@ modal.show {
   visibility: visible;
 }
 
-.ms, .mw {
+.ms,
+.mw {
   left: 0;
   position: absolute;
   top: 0;
@@ -315,9 +319,8 @@ modal.show {
 .ms {
   backdrop-filter: blur(5px);
   /* background: rgb(28 33 125 / 26%); */
-  background : #b6b7c742;
+  background: #b6b7c742;
   /* background-color: rgb(0 0 0 / 20%); */
-  
 }
 
 .mw {
@@ -388,6 +391,5 @@ modal.hide .mc {
     transform: translate3d(0, -100%, 0);
   }
 }
-
 
 /* fin estilos del modal */
