@@ -1,204 +1,109 @@
 "use strict";
-
-/**
- * User sessions
- * @param {Array} users
- */
-const users = [];
-
-/**
- * Find opponent for a user
- * @param {User} user
- */
-function findOpponent(user) {
-	for (let i = 0; i < users.length; i++) {
-		if (
-			user !== users[i] &&
-			users[i].opponent === null
-		) {
-			new Game(user, users[i]).start();
-		}
-	}
-}
-
-/**
- * Remove user session
- * @param {User} user
- */
-function removeUser(user) {
-	users.splice(users.indexOf(user), 1);
-}
-
-/**
- * Game class
- */
-class Game {
-
-	/**
-	 * @param {User} user1
-	 * @param {User} user2
-	 */
-	constructor(user1, user2) {
-		this.user1 = user1;
-		this.user2 = user2;
-	}
-
-	/**
-	 * Start new game
-	 */
-	start() {
-		this.user1.start(this, this.user2);
-		this.user2.start(this, this.user1);
-	}
-
-	/**
-	 * Is game ended
-	 * @return {boolean}
-	 */
-	ended() {
-		return this.user1.guess !== GUESS_NO && this.user2.guess !== GUESS_NO;
-	}
-
-	/**
-	 * Final score
-	 */
-	score() {
-		if (
-			this.user1.guess === GUESS_ROCK && this.user2.guess === GUESS_SCISSORS ||
-			this.user1.guess === GUESS_PAPER && this.user2.guess === GUESS_ROCK ||
-			this.user1.guess === GUESS_SCISSORS && this.user2.guess === GUESS_PAPER
-		) {
-			this.user1.win();
-			this.user2.lose();
-		} else if (
-			this.user2.guess === GUESS_ROCK && this.user1.guess === GUESS_SCISSORS ||
-			this.user2.guess === GUESS_PAPER && this.user1.guess === GUESS_ROCK ||
-			this.user2.guess === GUESS_SCISSORS && this.user1.guess === GUESS_PAPER
-		) {
-			this.user2.win();
-			this.user1.lose();
-		} else {
-			this.user1.draw();
-			this.user2.draw();
-		}
-	}
-
-}
-
-/**
- * User session class
- */
-class User {
-
-	/**
-	 * @param {Socket} socket
-	 */
-	constructor(socket) {
-		this.socket = socket;
-		this.game = null;
-		this.opponent = null;
-		this.guess = GUESS_NO;
-	}
-
-	/**
-	 * Set guess value
-	 * @param {number} guess
-	 */
-	setGuess(guess) {
-		if (
-			!this.opponent ||
-			guess <= GUESS_NO ||
-			guess > GUESS_SCISSORS
-		) {
-			return false;
-		}
-		this.guess = guess;
-		return true;
-	}
-
-	/**
-	 * Start new game
-	 * @param {Game} game
-	 * @param {User} opponent
-	 */
-	start(game, opponent) {
-		this.game = game;
-		this.opponent = opponent;
-		this.guess = GUESS_NO;
-		this.socket.emit("start");
-	}
-
-	/**
-	 * Terminate game
-	 */
-	end() {
-		this.game = null;
-		this.opponent = null;
-		this.guess = GUESS_NO;
-		this.socket.emit("end");
-	}
-
-	/**
-	 * Trigger win event
-	 */
-	win() {
-		this.socket.emit("win", this.opponent.guess);
-	}
-
-	/**
-	 * Trigger lose event
-	 */
-	lose() {
-		this.socket.emit("lose", this.opponent.guess);
-	}
-
-	/**
-	 * Trigger draw event
-	 */
-	draw() {
-		this.socket.emit("draw", this.opponent.guess);
-	}
-
-}
+let availableUsers = [];
+const rooms = [];
 
 /**
  * Socket.IO on connect event
  * @param {Socket} socket
  */
 module.exports = {
+  io: (socket) => {
+    /**
+     * Evento para un nuevo usuario
+     */
+    socket.on(
+      "newUser",
+      ({ type = "online", friendRoom = "", player = {} }, callback) => {
+        // let room = "";
+        console.log({ type, friendRoom, player });
+        // Traer los usuarios que estén disponibles
+        // Se filtrará que no permita al mismo usuario
+        const filteredAvailableUsers = availableUsers.filter(
+          (v) => v.type === type && v.player.token !== player.token
+        );
 
-	io: (socket) => {
-		const user = new User(socket);
-		users.push(user);
-		findOpponent(user);
+        console.log("filteredAvailableUsers");
+        console.log(filteredAvailableUsers);
 
-		socket.on("disconnect", () => {
-			console.log("Disconnected: " + socket.id);
-			removeUser(user);
-			if (user.opponent) {
-				user.opponent.end();
-				findOpponent(user.opponent);
-			}
-		});
+        if (filteredAvailableUsers.length !== 0) {
+          // Hay usuarios dipsonibles para jugar....
+          const indexPartner = randomNumber(
+            0,
+            filteredAvailableUsers.length - 1
+          );
+          const startColor = randomNumber(0, 1);
+          const newRoom = availableUsers[indexPartner].room;
+          const partner = availableUsers[indexPartner].player;
+          const playerStartsGame = randomNumber(1, 2);
+          console.log({ indexPartner });
+          // Ya se tiene la información del segundo jugador...
+          const gameData = {
+            room: newRoom,
+            playerStartsGame:
+              playerStartsGame === 1 ? partner.token : player.token,
+            p1: {
+              ...partner,
+              color: startColor + 1,
+            },
+            p2: {
+              ...player,
+              id: socket.id,
+              color: +!startColor + 1,
+            },
+          };
 
-		socket.on("guess", (guess) => {
-			console.log("Guess: " + socket.id);
-			if (user.setGuess(guess) && user.game.ended()) {
-				user.game.score();
-				user.game.start();
-				storage.get('games', 0).then(games => {
-					storage.set('games', games + 1);
-				});
-			}
-		});
+          socket.join(newRoom);
 
-		console.log("Connected: " + socket.id);
-	},
+          rooms.push(gameData);
+          console.log(gameData);
+          const indexRoom = rooms.findIndex((v) => v.room === newRoom);
+          console.log("EL INDEX DLE PLAYER QUE SE VA");
+          console.log({ indexRoom });
+          availableUsers.splice(indexRoom, 1);
+          io.sockets.in(newRoom).emit("startGame", gameData);
+        } else {
+          // Se guardará el usuario en el lstado de usuarios disponibles...
+          // availableUsers.push(player);
+          const room = type === "online" ? guid() : friendRoom;
 
-	stat: (req, res) => {
-		storage.get('games', 0).then(games => {
-			res.send(`<h1>Games played: ${games}</h1>`);
-		});
-	}
+          availableUsers.push({
+            room,
+            type,
+            player: {
+              ...player,
+              id: socket.id,
+            },
+          });
+          socket.join(room);
+        }
 
+        callback();
+      }
+    );
+
+    socket.on("action", (data) => {
+      // drop -> realiza lanzamiento de un elemento
+
+      // Indica que el juego terminó
+      // if (data.type === 4) {
+      //   const indexRoom = rooms.findIndex((v) => v.room === data.room);
+      //   if (indexRoom >= 0) {
+      //     // Se elimina la sala así se evita que cuando se desconecten los usuarios
+      //     // se emita el mensaje de desconexión
+      //     rooms.splice(indexRoom, 1);
+      //   }
+      // }
+
+      io.sockets.in(data.room).emit(data.type, data);
+    });
+
+    /**
+     * Evento para indicar que un jugador se ha desconectado
+     */
+    socket.on("disconnect", () => {
+      // Buscar la sala a la cual pertenece este socket
+      // Se debería validar después si es un boarda/table para el party mode
+      console.log("se desconecta un usuario");
+    });
+  },
 };

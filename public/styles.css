@@ -94,6 +94,15 @@ a:visited {
   }
 }
 
+@keyframes vs {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-90%);
+  }
+}
+
 .button {
   position: relative;
   margin: auto;
@@ -217,7 +226,8 @@ avatar {
   position: relative;
 }
 
-avatar-image {
+avatar-image,
+.avs {
   background: #bbacb0;
   border-radius: 50%;
   border: 5px solid white;
@@ -245,19 +255,8 @@ avatar-image.blink {
   font-size: 40px;
 }
 
-avatar-name {
-  margin-top: 10px;
-  font-weight: bold;
-  font-size: 25px;
-}
-
-avatar-name button {
-  border: none;
-  background: none;
-  color: inherit;
-  cursor: pointer;
-  font-size: inherit;
-  font-weight: inherit;
+avatar-name a {
+  color: white;
 }
 
 .score {

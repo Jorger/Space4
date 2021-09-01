@@ -27,6 +27,9 @@
   ];
   const METEOR_COLORS = ["blue", "red"];
   const CACHE_KEY = "space-four";
+  let socket;
+  let connectedSocket = false;
+  // Utilidades
   $(
     "html"
   ).style.cssText += `--h: ${BASE_HEIGHT}px; --w: ${BASE_WIDTH}px; --turn: red;`;
@@ -203,6 +206,16 @@
   const generateLink = (label = "", url = "") =>
     `<a title=${label} href=${url} target="_blank" rel="noopener noreferrer">${label}</a>`;
 
+  /**
+   * Retorna los datos del usuario...
+   * @returns
+   */
+  const getPlayer = () => ({
+    name: getValueFromCache("name", ""),
+    avatar: getValueFromCache("avatar", 0),
+    token: getValueFromCache("token", ""),
+  });
+
   // fin de utilidades
 
   /**
@@ -269,7 +282,7 @@
     isOnline = false
   ) => `<div class=cs ${inlineStyles({
     width: "100%",
-    "margin-bottom": "30px",
+    margin: "30px 0",
   })}>
     ${players
       .map(
@@ -287,11 +300,12 @@
             <svg class="progress-ring" width="120" height="120" ${inlineStyles({
               position: "absolute",
               "z-index": 1,
-              top: "-5px",
+              top: "-20px",
+              transform: "scale(0.7)",
             })}>
               <circle class="progress-ring__circle" stroke="${
                 METEOR_COLORS[player.color - 1]
-              }" stroke-width="4" fill="transparent" r="52" cx="60" cy="60"/>
+              }" stroke-width="12" fill="transparent" r="52" cx="60" cy="60"/>
             </svg>
             `
               : ""
@@ -299,9 +313,13 @@
         ${Avatar({
           name: player.name,
           stylesImage: {
-            width: "80px",
-            height: "80px",
-            "font-size": "4rem",
+            width: "70px",
+            height: "70px",
+            "font-size": "3.5rem",
+          },
+          stylesName: {
+            "margin-top": "10px",
+            "font-size": "18px",
           },
           avatar: {
             image: player.image,
@@ -329,8 +347,11 @@
    * Renderiza el modal del juego
    */
   const Modal = {
-    show({ txt, yes = "yes", no = "no", cb }) {
-      $("modal .txt").innerHTML = txt;
+    show({ txt, icon = "", yes = "yes", no = "no", cb }) {
+      $("modal .txt").innerHTML =
+        (icon
+          ? `<p ${inlineStyles({ "font-size": "3rem" })}>${icon}</p>`
+          : "") + txt;
       addStyle($("modal #btn1"), { display: yes ? "block" : "none" });
       addStyle($("modal #btn2"), { display: no ? "block" : "none" });
       $("modal #btn1").textContent = yes;
@@ -355,6 +376,12 @@
     },
   };
 
+  const Chat = () => {
+    return `<chat ${inlineStyles({ "margin-top": "30px" })}>
+              <button class=button>Chat</button>
+            </chat>`;
+  };
+
   /**
    * Renderiza la pantalla del juego
    * @param {*} options
@@ -366,6 +393,10 @@
       numMeteorites = MAX_METEORITES,
       isOnline = {},
     } = options;
+    console.log("en game");
+    console.log(isOnline);
+
+    const currentPlayer = getPlayer();
     // Determina si es una partida offline, bien por que sean dos juagdores y por que es versus un bot
     const isOffline = !!(isTwoPlayers || isBot);
     // La grila dle juego...
@@ -376,7 +407,11 @@
     let animationOn = false;
     // Se debe determinar que jugar inicia la partida, esta variable cambiará, cada vez que se reinicie el juego
     // Cuando sea online a está variable le llegará el usuario que inició la partida...
-    let playerStartsGame = isOffline ? randomNumber(1, 2) : 1;
+    let playerStartsGame = isOffline
+      ? randomNumber(1, 2)
+      : isOnline.playerStartsGame === currentPlayer.token
+      ? 1
+      : 2;
     // Para el color del meteoro que se está lanzando
     // INCIALMENTE ES EL MISMO COLOR QUE playerStartsGame
     let playerHasTurn = playerStartsGame;
@@ -387,7 +422,7 @@
       ? !isTwoPlayers
         ? playerStartsGame === 2
         : false
-      : false;
+      : playerStartsGame === 2;
     // Para crear el orden de validación de los posibles movimientos de la "IA"
     const orderPossibleConnections = [];
 
@@ -395,37 +430,44 @@
     // Por defecto el jugador uno es el actual
     const PLAYER_DATA = [
       {
-        name: getValueFromCache("name", ""),
-        image: AVATARS[getValueFromCache("avatar", 0)],
-        color: isOffline ? randomNumber(1, 2) : 1,
-        id: getValueFromCache("token", ""),
+        name: currentPlayer.name,
+        image: AVATARS[currentPlayer.avatar],
+        color: isOffline ? randomNumber(1, 2) : isOnline.color,
+        token: currentPlayer.token,
         score: 0,
       },
     ];
 
-    if (isOffline) {
-      PLAYER_DATA.push({
-        name: isTwoPlayers ? "Guest" : "Mr. Bot",
-        image: isTwoPlayers ? "👽" : "🤖",
-        color: isOffline ? (PLAYER_DATA[0].color === 1 ? 2 : 1) : 2,
-        id: "",
-        score: 0,
-      });
+    PLAYER_DATA.push({
+      name: isOffline ? (isTwoPlayers ? "Guest" : "Mr. Bot") : isOnline.p2.name,
+      image: isOffline
+        ? isTwoPlayers
+          ? "👽"
+          : "🤖"
+        : AVATARS[isOnline.p2.avatar],
+      color: isOffline
+        ? PLAYER_DATA[0].color === 1
+          ? 2
+          : 1
+        : isOnline.p2.color,
+      score: 0,
+    });
 
-      if (isBot) {
-        // Genera el orden de las posibles combinaciones para la "IA"
-        for (let counter = numMeteorites - 1; counter >= 1; counter--) {
-          orderPossibleConnections.push(
-            { c: METEOR_COLORS[PLAYER_DATA[1].color - 1], i: counter },
-            { c: METEOR_COLORS[PLAYER_DATA[0].color - 1], i: counter }
-          );
-        }
+    if (isOffline && isBot) {
+      // Genera el orden de las posibles combinaciones para la "IA"
+      for (let counter = numMeteorites - 1; counter >= 1; counter--) {
+        orderPossibleConnections.push(
+          { c: METEOR_COLORS[PLAYER_DATA[1].color - 1], i: counter },
+          { c: METEOR_COLORS[PLAYER_DATA[0].color - 1], i: counter }
+        );
       }
     }
 
     // Guardará las conexiones que están cerca a cumplirse
     // útil para la IA
     let possibleConnections = {};
+    // Para guardar el intervalo online
+    let intervalOnline;
     /*
     1 es azul
     2 es rojo
@@ -478,17 +520,19 @@
           animationOn = false;
           meteorCounter++;
           playerHasTurn = playerHasTurn === 1 ? 2 : 1;
+          disableUI = isOffline
+            ? !!(isBot && playerHasTurn === 2)
+            : playerHasTurn === 2;
+          showPlayerTurn();
 
-          if (isOffline) {
-            // Se debe validar cuando se este jugando online
-            disableUI = isBot && playerHasTurn === 2;
-            showPlayerTurn();
-          }
+          // if (isOffline) {
+          //   // Se debe validar cuando se este jugando online
+
+          // }
         } else {
           showModal.show = true;
-          showModal.txt = `<p ${inlineStyles({
-            "font-size": "3rem",
-          })}>🤝</p><h2>Tied game</h2><p>Do you want to play again?</p>`;
+          showModal.icon = "🤝";
+          showModal.txt = `<h2>Tied game</h2><p>Do you want to play again?</p>`;
         }
       } else {
         // En esta parte se muestra quien ganó
@@ -516,17 +560,19 @@
           PLAYER_DATA[playerHasTurn - 1].score;
 
         showModal.show = true;
-        showModal.txt = `<p ${inlineStyles({ "font-size": "3rem" })}>${
-          PLAYER_DATA[playerHasTurn - 1].image
-        }</p><h2>${
+        showModal.icon = PLAYER_DATA[playerHasTurn - 1].image;
+        showModal.txt = `<h2>${
           PLAYER_DATA[playerHasTurn - 1].name
         } has won</h2><p>Do you want to play again?</p>`;
       }
 
       if (showModal.show) {
         Modal.show({
-          txt: showModal.txt,
+          ...showModal,
           cb(answer) {
+            if (intervalOnline) {
+              clearInterval(intervalOnline);
+            }
             answer ? resetGame() : Screen();
           },
         });
@@ -759,6 +805,22 @@
 
       // Establece que se está haciendo una animación de movimiento
       animationOn = true;
+
+      if (playerHasTurn === 1 && !isOffline) {
+        // if (intervalOnline) {
+        //   clearInterval(intervalOnline);
+        // }
+        // Reinicia el contador circular...
+
+        console.log("EMITE UN MOVIMIENTO");
+        socket.emit("action", {
+          type: "drop",
+          currentPlayer,
+          room: isOnline.room,
+          index,
+          color,
+        });
+      }
     };
 
     /**
@@ -779,6 +841,37 @@
       if (isBot && playerHasTurn === 2) {
         botTurn();
       }
+
+      // Establecer el intervalo para el lanzamiento
+      const circle = $(`#player-${playerHasTurn} circle`);
+      const radius = circle.r.baseVal.value;
+      const circumference = radius * 2 * Math.PI;
+      circle.style.strokeDasharray = `${circumference} ${circumference}`;
+      circle.style.strokeDashoffset = `${circumference}`;
+      // setProgress(100);
+
+      // if (intervalOnline) {
+      //   clearInterval(intervalOnline);
+      // }
+
+      // function setProgress(percent) {
+      //   const offset = circumference - (percent / 100) * circumference;
+      //   circle.style.strokeDashoffset = offset;
+      // }
+
+      // let counterTmp = 100;
+      // intervalOnline = setInterval(() => {
+      //   setProgress(counterTmp);
+      //   counterTmp--;
+      //   console.log({ counterTmp });
+      //   if (counterTmp < 0) {
+      //     clearInterval(intervalOnline);
+      //   }
+      // }, 150);
+
+      // if (!isOffline) {
+      //   // Establecer
+      // }
     };
 
     /**
@@ -823,8 +916,8 @@
      */
     const botTurn = debounce(() => {
       let positionIndex = getRandomMove();
-      const playerColor = METEOR_COLORS[PLAYER_DATA[0].color - 1];
-      const botColor = METEOR_COLORS[PLAYER_DATA[1].color - 1];
+      // const playerColor = METEOR_COLORS[PLAYER_DATA[0].color - 1];
+      // const botColor = METEOR_COLORS[PLAYER_DATA[1].color - 1];
       let findPossibleMovement = false;
       // Valida si realiza el proceso de predecir el movimiento
       // Si es de tipo medium, será aleatorio
@@ -917,8 +1010,8 @@
         "flex-direction": "column",
         "z-index": 3,
       })}>
-        ${ButtonBack({ left: "45%" })}
-        ${Gamers(PLAYER_DATA, false)}
+        ${ButtonBack("EXIT", { left: "45%" })}
+        ${Gamers(PLAYER_DATA, true)}
         <div id=turn ${inlineStyles({
           "font-size": "25px",
           "margin-bottom": "30px",
@@ -926,6 +1019,8 @@
         ${Board()}
       </div>`
     );
+
+    // ${Chat()}
 
     // Crear los eventos para el click en los hoyos
     $$("holes > button").forEach((btn) =>
@@ -953,13 +1048,20 @@
     // Para el evento de regresar
     $on($("#back"), "click", () => {
       Modal.show({
-        txt: `<p ${inlineStyles({
-          "font-size": "3rem",
-        })}>⁉️</p><h2 ${inlineStyles({
+        icon: "⚠️",
+        txt: `<h2 ${inlineStyles({
           "margin-bottom": "10px",
         })}>Exit game</h2><p>Are you sure you want to finish the game?</p>`,
         cb(answer) {
           if (answer) {
+            // Debe estar sólo cuando sea online
+            if (intervalOnline) {
+              clearInterval(intervalOnline);
+            }
+
+            if (!isOffline) {
+              disconnectSocket();
+            }
             Screen();
           }
         },
@@ -967,12 +1069,30 @@
     });
 
     // Establecer el intervalo...
-    if (isOffline) {
-      showPlayerTurn();
+    showPlayerTurn();
+
+    // console.log("EMITE UN MOVIMIENTO");
+    // socket.emit("action", {
+    //   type: "drop",
+    //   currentPlayer,
+    //   room: isOnline.room,
+    //   index,
+    //   color,
+    // });
+    // selectedColumn(index, color)
+
+    if (connectedSocket && socket) {
+      socket.on("drop", (data) => {
+        if (data.currentPlayer.token !== currentPlayer.token) {
+          console.log("LA DATA DEL LANZAMIENTO");
+          console.log(data);
+          selectedColumn(data.index, data.color);
+        }
+      });
     }
   };
 
-  const ButtonBack = (style = {}) =>
+  const ButtonBack = (label = "Back", style = {}) =>
     `<button id=back  ${inlineStyles({
       position: "absolute",
       left: "5%",
@@ -984,7 +1104,7 @@
       cursor: "pointer",
       "font-weight": "bold",
       ...style,
-    })}>Back</button>`;
+    })}>${label}</button>`;
 
   /**
    * Renderizará la pantalla de selección de dificultad en modo Bot
@@ -1026,41 +1146,130 @@
   const AvatarImage = ({ image = "", styles = {} }) =>
     `<avatar-image ${inlineStyles(styles)}>${image}</avatar-image>`;
 
-  // Para el cargador de tiempo:
-  const Avatar = ({ name, stylesImage = {}, avatar = {}, edit = false }) =>
-    `<avatar class=cs>${AvatarImage({
-      image: avatar.image,
-      styles: stylesImage,
-    })}<avatar-name>${edit ? `<button>${name}</button>` : name}</avatar-name>${
-      edit
-        ? ` <select class=avatars>${AVATARS.map(
-            (v, i) =>
-              `<option value=${i}${
-                avatar.index === i ? " selected" : ""
-              }>${v}</option>`
-          ).join("")}</select>`
-        : ""
-    }</avatar>`;
+  const AvatarName = ({ name = "", edit = false, styles = {} }) => {
+    return `<avatar-name ${inlineStyles(styles)}>${
+      edit ? `<a href="#">${name}</a>` : name
+    }</avatar-name>`;
+  };
 
+  // Para el cargador de tiempo:
+  const Avatar = ({
+    name,
+    stylesImage = {},
+    stylesName = {},
+    avatar = {},
+    edit = false,
+  }) =>
+    `<avatar class=cs>
+      ${AvatarImage({
+        image: avatar.image,
+        styles: stylesImage,
+      })}
+      ${AvatarName({ name, styles: stylesName, edit })}
+      ${
+        edit
+          ? ` <select class=avatars>${AVATARS.map(
+              (v, i) =>
+                `<option value=${i}${
+                  avatar.index === i ? " selected" : ""
+                }>${v}</option>`
+            ).join("")}</select>`
+          : ""
+      }
+    </avatar>`;
+
+  const AvatarSearch = () => {
+    return `<div class=avs ${inlineStyles({
+      width: "80px",
+      height: "80px",
+      overflow: "hidden",
+      position: "relative",
+    })}>
+        <div class=cs ${inlineStyles({
+          "flex-direction": "column",
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          animation: "vs 1.5s infinite linear",
+          "font-size": "3.5rem",
+        })}>
+          ${AVATARS.map((v) => v).join("")}
+        </div>
+    </div>`;
+  };
+
+  /**
+   * Componente que renderiza la pantalla de búsuqeda de un jugador
+   */
   const SearchOpponent = () => {
+    const currentPlayer = getPlayer();
+    const stylesName = {
+      "margin-top": "15px",
+      "font-weight": "bold",
+      "font-size": "15px",
+    };
+
     setHtml(
       $("#render"),
       `<div class=cs ${inlineStyles({
         "flex-direction": "column",
+        width: "100%",
         "z-index": 5,
       })}>
         ${ButtonBack()}
         ${Logo()}
+        <div class="cs" ${inlineStyles({
+          margin: "50px 0",
+          width: "90%",
+          "justify-content": "space-around",
+        })}>
+          ${Avatar({
+            name: currentPlayer.name,
+            avatar: {
+              image: AVATARS[currentPlayer.avatar],
+              index: currentPlayer.avatar,
+            },
+            stylesImage: {
+              width: "70px",
+              height: "70px",
+              "font-size": "3.5rem",
+            },
+            stylesName,
+          })}
+          <h1>Vs</h1>
+          <div id="vs" class=cs ${inlineStyles({
+            "flex-direction": "column",
+          })}>
+            ${AvatarSearch()}
+            ${AvatarName({
+              name: "Searching...",
+              styles: stylesName,
+            })}
+          </div>
+        </div>
+        <button class=button>Cancel</button>
       </div>`
     );
 
-    $on($("#back"), "click", () => Screen());
+    const returnHome = () => {
+      Screen();
+      disconnectSocket();
+    };
+
+    $on($("#back"), "click", returnHome);
+    $on($(".button"), "click", returnHome);
+
+    // Configura la conexión del socket del juego...
+    configureSocket();
   };
 
   /**
    * Renderiza la página de Looby
    */
   const Lobby = () => {
+    const currentPlayer = getPlayer();
+
     setHtml(
       $("#render"),
       `<div class=cs ${inlineStyles({
@@ -1069,10 +1278,15 @@
       })}>
         ${Logo()}
         ${Avatar({
-          name: getValueFromCache("name", ""),
+          name: currentPlayer.name,
           avatar: {
-            image: AVATARS[getValueFromCache("avatar", 0)],
-            index: getValueFromCache("avatar", 0),
+            image: AVATARS[currentPlayer.avatar],
+            index: currentPlayer.avatar,
+          },
+          stylesName: {
+            "margin-top": "15px",
+            "font-weight": "bold",
+            "font-size": "25px",
           },
           edit: true,
         })}
@@ -1157,7 +1371,8 @@
       savePropierties("avatar", +e.target.value);
     });
 
-    $on($("avatar-name button"), "click", () => {
+    $on($("avatar-name a"), "click", (e) => {
+      e.preventDefault();
       const newName = sanizateTags(
         prompt("Write your name (MAX 10)", getValueFromCache("name", ""))
       );
@@ -1166,7 +1381,7 @@
         const shortName =
           newName.length > 10 ? newName.substring(0, 10) + "..." : newName;
 
-        $("avatar-name button").textContent = shortName;
+        $("avatar-name a").textContent = shortName;
         savePropierties("name", shortName);
       }
     });
@@ -1235,6 +1450,40 @@
 
   Modal.events();
 
+  // Código para manejo de los sockets
+  const disconnectSocket = () => {
+    if (connectedSocket && socket) {
+      connectedSocket = false;
+      socket.disconnect();
+    }
+  };
+
+  const configureSocket = (options = {}) => {
+    socket = io();
+    connectedSocket = true;
+
+    // Envia la data del usuario actual al server y busca un jugador
+    socket.on("connect", () => {
+      socket.emit("newUser", { ...options, player: getPlayer() }, (error) => {
+        console.log("Data");
+      });
+    });
+
+    socket.on("startGame", (data) => {
+      const currentPlayer = data.p1.token === getPlayer().token ? "p1" : "p2";
+
+      Screen("Game", {
+        isOnline: {
+          room: data.room,
+          playerStartsGame: data.playerStartsGame,
+          color: data[currentPlayer].color,
+          p2: data[currentPlayer === "p1" ? "p2" : "p1"],
+        },
+      });
+    });
+  };
+  // fin código de los sockets
+
   // Establecer alugno valores en sesion storage
   if (!ObjectKeys(getDataCache()).length) {
     savePropierties("name", `Astronaut ${randomNumber(100, 999)}`);
@@ -1242,8 +1491,8 @@
     savePropierties("token", guid());
   }
 
-  Screen("SearchOpponent");
-
+  // Screen();
+  Screen();
   $on(document, "contextmenu", (event) => event.preventDefault());
   $on(window, "resize", onWindowResize);
   onWindowResize();
