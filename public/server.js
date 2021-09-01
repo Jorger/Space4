@@ -104,6 +104,33 @@ module.exports = {
       // Buscar la sala a la cual pertenece este socket
       // Se debería validar después si es un boarda/table para el party mode
       console.log("se desconecta un usuario");
+      console.log("EL USUARIO QUE SE FUE");
+      console.log(socket.id);
+
+      const indexRoom = rooms.findIndex(
+        ({ p1, p2 }) => p1.id === socket.id || p2.id === socket.id
+      );
+
+      console.log({ indexRoom });
+
+      if (indexRoom >= 0) {
+        // Se emite al jugador que quedó que se ha desconectado el otro jugador
+        io.sockets.in(rooms[indexRoom].room).emit("playerDisconnect");
+        // Se elimina la sala
+        rooms.splice(indexRoom, 1);
+      } else {
+        // Buscar en el listado de usuarios pendientes a jugar
+        const indexPlayer = availableUsers.findIndex(
+          ({ player }) => player.id === socket.id
+        );
+
+        console.log({ indexPlayer });
+
+        // Se saca al usuario del listado de jugadores disponibles
+        if (indexPlayer >= 0) {
+          availableUsers.splice(indexPlayer, 1);
+        }
+      }
     });
   },
 };
