@@ -317,31 +317,32 @@
             <svg class="progress-ring" width="120" height="120" ${inlineStyles({
               position: "absolute",
               "z-index": 1,
-              top: "-20px",
+              top: "11px",
               transform: "scale(0.7)",
             })}>
               <circle class="progress-ring__circle" stroke="${
                 METEOR_COLORS[player.color - 1]
               }" stroke-width="12" fill="transparent" r="52" cx="60" cy="60"/>
             </svg>
+            <bubble class=cs></bubble>
             `
               : ""
           }
-        ${Avatar({
-          name: player.name,
-          stylesImage: {
-            width: "70px",
-            height: "70px",
-            "font-size": "3.5rem",
-          },
-          stylesName: {
-            "margin-top": "10px",
-            "font-size": "18px",
-          },
-          avatar: {
+          ${AvatarName({
+            name: player.name,
+            styles: {
+              "margin-bottom": "10px",
+              "font-size": "18px",
+            },
+          })}
+          ${AvatarImage({
             image: player.image,
-          },
-        })}
+            styles: {
+              width: "70px",
+              height: "70px",
+              "font-size": "3.5rem",
+            },
+          })}
         <div class=cs>
           ${Meteor({
             style: {
@@ -393,29 +394,23 @@
     },
   };
 
-  const Chat = () => {
-    return `<chat ${inlineStyles({
+  /**
+   * Renderiza el componente del chat...
+   * @returns
+   */
+  const Chat = () =>
+    `<chat ${inlineStyles({
       "margin-top": "30px",
       position: "relative",
       "z-index": 1,
-    })}>
-              <div ${inlineStyles({
-                position: "absolute",
-                "clip-path":
-                  "polygon(0% 0%, 100% 0%, 99% 95%, 68% 94%, 61% 100%, 54% 95%, 0 95%)",
-                width: "280px",
-                height: "280px",
-                border: "1px solid red",
-                top: "-281px",
-                left: "-122px",
-                background: "white",
-                "border-radius": "10px",
-                "z-index": 1,
-              })}>Contenido</div>
-
-              <button class=button>Chat</button>
-            </chat>`;
-  };
+    })}><div class=chat>${ObjectKeys(CHAT_MESSAGES)
+      .map(
+        (opt) =>
+          `<div class=chat-${opt}>${CHAT_MESSAGES[opt]
+            .map((v, i) => `<button id="${opt}-${i}">${v}</button>`)
+            .join("")}</div>`
+      )
+      .join("")}</div><button class=button>Chat</button></chat>`;
 
   /**
    * Renderiza la pantalla del juego
@@ -428,10 +423,6 @@
       numMeteorites = MAX_METEORITES,
       isOnline = {},
     } = options;
-    console.log("en game");
-    console.log(isOnline);
-    // MAX_METEORITES
-
     const currentPlayer = getPlayer();
     // Determina si es una partida offline, bien por que sean dos juagdores y por que es versus un bot
     const isOffline = !!(isTwoPlayers || isBot);
@@ -513,6 +504,48 @@
     2 es rojo
     */
 
+    /**
+     * Limpiar los intervalos del juego
+     */
+    const clearIntervals = () => {
+      if (intervalOnline) {
+        clearInterval(intervalOnline);
+      }
+
+      if (intervalFallbackAnimation) {
+        clearTimeout(intervalFallbackAnimation);
+      }
+
+      for (let i = 0; i < PLAYER_DATA.length; i++) {
+        if (PLAYER_DATA[i].interval) {
+          clearTimeout(PLAYER_DATA.interval);
+        }
+      }
+    };
+
+    /**
+     * Muestra el mensaje del chat...
+     * @param {*} type
+     * @param {*} value
+     * @param {*} playerNumber
+     */
+    const showMessage = (type = "", value = 0, playerNumber = 1) => {
+      const bubble = $(`#player-${playerNumber} bubble`);
+      bubble.innerHTML = CHAT_MESSAGES[type][value];
+      addClass(bubble, "show");
+      addStyle(bubble, {
+        "font-size": type === "msg" ? "14px" : "2em",
+      });
+
+      if (PLAYER_DATA[playerNumber - 1].interval) {
+        clearTimeout(PLAYER_DATA[playerNumber - 1].interval);
+      }
+
+      PLAYER_DATA[playerNumber - 1].interval = setTimeout(() => {
+        removeClass(bubble, "show");
+      }, 2000);
+    };
+
     const setLaunchTimer = (playerNumber = 1, startCounter = true) => {
       // Establecer el intervalo para el lanzamiento
       let counterTmp = 100;
@@ -537,14 +570,11 @@
         intervalOnline = setInterval(() => {
           setProgress(counterTmp);
           counterTmp--;
-          // console.log({ counterTmp });
           if (counterTmp < 0) {
             clearInterval(intervalOnline);
             // Se debe hacer el lanzamiento aleatorio
             if (playerNumber === 1) {
               const randomMove = getRandomMove();
-              console.log("Lanzamiento aleatorio:", { randomMove });
-
               selectedColumn(randomMove, PLAYER_DATA[playerNumber - 1].color);
             }
           }
@@ -602,14 +632,7 @@
           disableUI = isOffline
             ? !!(isBot && playerHasTurn === 2)
             : playerHasTurn === 2;
-
-          console.log("EN 571 y el playerHasTurn es: ", playerHasTurn);
           showPlayerTurn();
-
-          // if (isOffline) {
-          //   // Se debe validar cuando se este jugando online
-
-          // }
         } else {
           showModal.show = true;
           showModal.icon = "🤝";
@@ -648,12 +671,7 @@
       }
 
       if (showModal.show) {
-        if (intervalOnline) {
-          clearInterval(intervalOnline);
-        }
-        if (intervalFallbackAnimation) {
-          clearTimeout(intervalFallbackAnimation);
-        }
+        clearIntervals();
         Modal.show({
           ...showModal,
           cb(answer) {
@@ -887,31 +905,21 @@
       const newPosition =
         GRID.map((v) => v[index]).filter((v) => !v.length).length - 1;
 
-      console.log("EN selectedColumn");
-      console.log("ESTADO DE animationOn: ", animationOn);
-
       if (animationOn || newPosition < 0) return;
-
       $("#turn").innerHTML = "...";
-
-      console.log({ index, color, meteorCounter });
 
       const newMeteor = $(`#m-${meteorCounter}`);
       // Guarda el color en la grilla
       GRID[newPosition][index] = [color, meteorCounter];
       // Guardar atributos en el elemento
       newMeteor.setAttribute("p", `${newPosition}-${index}`);
-
-      if (newMeteor) {
-        console.log("EXISTE EL METEORO");
-      }
-
       // Establecer la posición inicial...
       addStyle(newMeteor, {
         left: `${BASE_POSITION + METEOR_SIZE * index}px`,
         top: `${(METEOR_SIZE + BASE_POSITION) * -1}px`,
         filter: setColorMeteor(color),
         visibility: "visible",
+        animation: "cr 5s infinite linear",
       });
 
       // Interrupción para indicar la posición de llegada
@@ -930,7 +938,6 @@
         setLaunchTimer(playerHasTurn, false);
 
         if (playerHasTurn === 1) {
-          console.log("EMITE UN MOVIMIENTO");
           socket.emit("action", {
             type: "drop",
             currentPlayer,
@@ -948,18 +955,11 @@
       }
 
       intervalFallbackAnimation = setTimeout(() => {
-        console.warn(
-          "EJECUTA LA ACCIÓN SI NO SE EJECUTÓ LA ANIMACIÓN DE MOVIMIENTO"
-        );
         runFallback = true;
-        console.log({ newPosition, index });
-        console.log("color: ", METEOR_COLORS[color - 1]);
         if (newMeteor) {
           addStyle(newMeteor, {
             top: `${BASE_POSITION + METEOR_SIZE * newPosition}px`,
           });
-        } else {
-          console.log("NO EXISTE EL METEORO");
         }
 
         validateEndsMovement(validateMeteorConnection([newPosition, index]));
@@ -985,15 +985,10 @@
         botTurn();
       }
 
-      // Camiarle a false...
+      // Para reiniciar el contador de lanzamiento del juego
       if (!isOffline) {
-        console.log({ playerHasTurn });
         setLaunchTimer(playerHasTurn);
       }
-
-      // if (!isOffline) {
-      //   // Establecer
-      // }
     };
 
     /**
@@ -1120,14 +1115,7 @@
         : playerStartsGame === 2;
       possibleConnections = {};
       runFallback = false;
-      if (intervalOnline) {
-        clearInterval(intervalOnline);
-      }
-
-      if (intervalFallbackAnimation) {
-        clearTimeout(intervalFallbackAnimation);
-      }
-
+      clearIntervals();
       showPlayerTurn();
     };
 
@@ -1145,11 +1133,31 @@
           "margin-bottom": "30px",
         })}></div>
         ${Board()}
-        ${Chat()}
+        ${!isOffline ? Chat() : ""}
       </div>`
     );
 
-    // ${!isOffline ? Chat() : ""}
+    // Eventos para el chat
+    if (!isOffline) {
+      $on($("chat .button"), "click", () => {
+        $(".chat").classList.toggle("show");
+      });
+
+      $$(".chat button").forEach((btn) => {
+        $on(btn, "click", (e) => {
+          const value = e.target.id.split("-");
+          showMessage(value[0], +value[1]);
+          socket.emit("action", {
+            type: "chat",
+            room: isOnline.room,
+            currentPlayer,
+            value,
+          });
+
+          removeClass($(".chat"), "show");
+        });
+      });
+    }
 
     // Crear los eventos para el click en los hoyos
     $$("holes > button").forEach((btn) =>
@@ -1168,9 +1176,6 @@
     // Para los eventos de los mateoros...
     $$("board > meteor").forEach((mt) =>
       onRest(mt, (e) => {
-        console.log("TERMINA LA ANIMACIÓN");
-        console.log({ runFallback });
-
         if (intervalFallbackAnimation) {
           clearTimeout(intervalFallbackAnimation);
         }
@@ -1193,14 +1198,7 @@
         cb(answer) {
           if (answer) {
             // Debe estar sólo cuando sea online
-            if (intervalOnline) {
-              clearInterval(intervalOnline);
-            }
-
-            if (intervalFallbackAnimation) {
-              clearTimeout(intervalFallbackAnimation);
-            }
-
+            clearIntervals();
             if (!isOffline) {
               disconnectSocket();
             }
@@ -1210,53 +1208,18 @@
       });
     });
 
-    // Establecer el intervalo...
-    showPlayerTurn();
-
-    // console.log("EMITE UN MOVIMIENTO");
-    // socket.emit("action", {
-    //   type: "drop",
-    //   currentPlayer,
-    //   room: isOnline.room,
-    //   index,
-    //   color,
-    // });
-    // selectedColumn(index, color)
-
     if (connectedSocket && socket) {
       socket.on("drop", (data) => {
         if (data.currentPlayer.token !== currentPlayer.token) {
-          console.log("LLEGA LANZAMIENTO DEL JUGADOR DOS");
-          console.log(data);
           animationOn = false;
-
-          if (intervalOnline) {
-            clearInterval(intervalOnline);
-          }
-
-          if (intervalFallbackAnimation) {
-            clearInterval(intervalFallbackAnimation);
-            runFallback = false;
-          }
-
+          runFallback = false;
+          clearIntervals();
           selectedColumn(data.index, data.color);
-
-          // setTimeout(() => {
-
-          // }, 100);
-
-          // setLaunchTimer(playerHasTurn, false);
         }
       });
 
       socket.on("playerDisconnect", () => {
-        if (intervalOnline) {
-          clearInterval(intervalOnline);
-        }
-        if (intervalFallbackAnimation) {
-          clearTimeout(intervalFallbackAnimation);
-        }
-
+        clearIntervals();
         disconnectSocket();
         Screen();
 
@@ -1302,7 +1265,15 @@
           resetGame();
         }
       });
+
+      socket.on("chat", (data) => {
+        if (data.currentPlayer.token !== currentPlayer.token) {
+          showMessage(data.value[0], +data.value[1], 2);
+        }
+      });
     }
+
+    showPlayerTurn();
   };
 
   const ButtonBack = (label = "Back", style = {}) =>
@@ -1474,7 +1445,24 @@
     $on($(".button"), "click", returnHome);
 
     // Configura la conexión del socket del juego...
+    // TODO: Capturar el error cuando el socket que caiga
     configureSocket();
+  };
+
+  const PlayFriends = () => {
+    setHtml(
+      $("#render"),
+      `<div class=cs ${inlineStyles({
+        "flex-direction": "column",
+        width: "100%",
+        "z-index": 5,
+      })}>
+        ${ButtonBack()}
+        ${Logo()}
+      </div>`
+    );
+
+    $on($("#back"), "click", () => Screen());
   };
 
   /**
@@ -1561,19 +1549,18 @@
     $$(".options > button").forEach((btn) => {
       $on(btn, "click", (e) => {
         const type = e.target.id;
-
         if (type === "two") {
           Screen("Game", {
             isTwoPlayers: true,
           });
-        }
-
-        if (type === "bot") {
-          Screen("Difficulty");
-        }
-
-        if (type === "online") {
-          Screen("SearchOpponent");
+        } else {
+          Screen(
+            {
+              bot: "Difficulty",
+              online: "SearchOpponent",
+              friend: "PlayFriends",
+            }[type]
+          );
         }
       });
     });
@@ -1611,6 +1598,7 @@
       Game,
       Difficulty,
       SearchOpponent,
+      PlayFriends,
     };
 
     Handler[screen](params);
@@ -1704,7 +1692,6 @@
     savePropierties("token", guid());
   }
 
-  // Screen();
   Screen();
   $on(document, "contextmenu", (event) => event.preventDefault());
   $on(window, "resize", onWindowResize);

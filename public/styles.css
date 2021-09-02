@@ -1,5 +1,6 @@
 :root {
   --black: black;
+  --buble: polygon(0% 0%, 100% 0%, 99% 95%, 68% 94%, 61% 100%, 54% 95%, 0 95%);
 }
 
 /* Estilos globales */
@@ -392,3 +393,92 @@ modal.hide .mc {
 }
 
 /* fin estilos del modal */
+
+/* Para el chat */
+.chat {
+  display: none;
+  position: absolute;
+  clip-path: var(--buble);
+  width: 280px;
+  height: 280px;
+  top: -281px;
+  left: -122px;
+  background: #01866e;
+  border-radius: 10px;
+  z-index: 1;
+}
+
+.chat.show {
+  display: block;
+}
+
+.chat button {
+  border: none;
+  cursor: pointer;
+}
+
+.chat-msg {
+  padding: 10px;
+}
+
+.chat-msg,
+.chat-emoji {
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  flex-flow: wrap;
+}
+
+.chat-msg button {
+  width: 32%;
+  font-size: 10px;
+  margin-bottom: 5px;
+  padding: 7px;
+  color: white;
+  border-radius: 10px;
+  background: #016e59;
+}
+
+.chat-emoji button {
+  background: none;
+  font-size: 2.1em;
+  width: 20%;
+}
+
+bubble {
+  visibility: hidden;
+  position: absolute;
+  background: white;
+  color: gray;
+  font-family: Arial;
+  font-weight: bold;
+  text-align: center;
+  width: 140px;
+  height: 50px;
+  border-radius: 9px;
+  padding: 0px;
+  top: 120px;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 1s, visibility 1s;
+}
+
+bubble.show {
+  visibility: visible;
+  opacity: 1;
+}
+
+bubble:after {
+  content: "";
+  position: absolute;
+  display: block;
+  width: 0;
+  z-index: 1;
+  border-style: solid;
+  border-color: white transparent;
+  border-width: 0 14px 10px;
+  top: -10px;
+  left: 50%;
+  margin-left: -14px;
+}
+/* Fin del chat */
