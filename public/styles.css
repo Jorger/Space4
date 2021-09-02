@@ -254,6 +254,7 @@ avatar-image.blink {
   height: 100px;
   opacity: 0;
   font-size: 40px;
+  border-width: 2px;
 }
 
 avatar-name a {
