@@ -1209,12 +1209,49 @@
     });
 
     if (connectedSocket && socket) {
-      socket.on("drop", (data) => {
+      socket.on("action", (data) => {
         if (data.currentPlayer.token !== currentPlayer.token) {
-          animationOn = false;
-          runFallback = false;
-          clearIntervals();
-          selectedColumn(data.index, data.color);
+          const { type = "" } = data;
+
+          if (type === "drop") {
+            animationOn = false;
+            runFallback = false;
+            clearIntervals();
+            selectedColumn(data.index, data.color);
+          }
+
+          if (type === "playAgain") {
+            Modal.show({
+              icon: "😃",
+              txt: `<h2 ${inlineStyles({
+                "text-align": "center",
+              })}>Your opponent wants to play again</h2>`,
+              cb(answer) {
+                if (answer) {
+                  // Se reinicia el juego y se le manda un socket indicando que se acepta
+                  socket.emit("action", {
+                    type: "accept",
+                    room: isOnline.room,
+                    currentPlayer,
+                  });
+                  resetGame();
+                } else {
+                  disconnectSocket();
+                  Screen();
+                }
+              },
+            });
+          }
+
+          if (type === "accept") {
+            // Se cierra el modal que se tenga abierto...
+            Modal.hide();
+            resetGame();
+          }
+
+          if (type === "chat") {
+            showMessage(data.value[0], +data.value[1], 2);
+          }
         }
       });
 
@@ -1231,45 +1268,6 @@
           no: "",
           yes: "Ok",
         });
-      });
-
-      socket.on("playAgain", (data) => {
-        if (data.currentPlayer.token !== currentPlayer.token) {
-          Modal.show({
-            icon: "😃",
-            txt: `<h2 ${inlineStyles({
-              "text-align": "center",
-            })}>Your opponent wants to play again</h2>`,
-            cb(answer) {
-              if (answer) {
-                // Se reinicia el juego y se le manda un socket indicando que se acepta
-                socket.emit("action", {
-                  type: "accept",
-                  room: isOnline.room,
-                  currentPlayer,
-                });
-                resetGame();
-              } else {
-                disconnectSocket();
-                Screen();
-              }
-            },
-          });
-        }
-      });
-
-      socket.on("accept", (data) => {
-        if (data.currentPlayer.token !== currentPlayer.token) {
-          // Se cierra el modal que se tenga abierto...
-          Modal.hide();
-          resetGame();
-        }
-      });
-
-      socket.on("chat", (data) => {
-        if (data.currentPlayer.token !== currentPlayer.token) {
-          showMessage(data.value[0], +data.value[1], 2);
-        }
       });
     }
 
@@ -1386,13 +1384,15 @@
   /**
    * Componente que renderiza la pantalla de búsuqeda de un jugador
    */
-  const SearchOpponent = () => {
+  const SearchOpponent = (data = {}) => {
     const currentPlayer = getPlayer();
     const stylesName = {
       "margin-top": "15px",
       "font-weight": "bold",
       "font-size": "15px",
     };
+
+    console.log(data);
 
     setHtml(
       $("#render"),
@@ -1445,7 +1445,6 @@
     $on($(".button"), "click", returnHome);
 
     // Configura la conexión del socket del juego...
-    // TODO: Capturar el error cuando el socket que caiga
     configureSocket();
   };
 
@@ -1459,10 +1458,44 @@
       })}>
         ${ButtonBack()}
         ${Logo()}
+        ${[
+          {
+            legend: "Please enter the five room code",
+            html: `<form><input type="tel" id="code" autocomplete="off"><button type="submit" class=button>JOIN</button></form>`,
+          },
+          {
+            legend: "Create a private room",
+            html: `<button class=button>CREATE</button>`,
+          },
+        ]
+          .map(
+            (v, i) =>
+              `<div id=f-${i} ${inlineStyles({
+                width: "80%",
+              })}><fieldset class=cs><legend>${v.legend}</legend>${
+                v.html
+              }</fieldset></div>${i === 0 ? "<h2>OR</h2>" : ""}`
+          )
+          .join("")}
       </div>`
     );
 
     $on($("#back"), "click", () => Screen());
+    // Para los eventos...
+    $on($("form"), "submit", (e) => {
+      e.preventDefault();
+      console.log("enviar el form");
+    });
+
+    $on($("#f-1 button"), "click", () => {
+      // const room = randomNumber(10000, 99999);
+      // console.log({ room });
+      Screen("SearchOpponent", {
+        createRoom: true,
+        room: randomNumber(10000, 99999),
+      });
+      // console.log("CREAR LA SALA");
+    });
   };
 
   /**
@@ -1496,10 +1529,10 @@
           "margin-top": "25px",
         })}>
         ${[
-          ["Vs Bot", "bot"],
           ["Two Players", "two"],
-          ["Play Online", "online"],
+          ["Vs Bot", "bot"],
           ["Play with friends", "friend"],
+          ["Play Online", "online"],
         ]
           .map(
             (v) =>
@@ -1670,6 +1703,17 @@
       });
     });
 
+    socket.on("connect_error", () => {
+      Screen();
+      disconnectSocket();
+      Modal.show({
+        icon: "🔌",
+        txt: `<h2>Error connecting to server</h2>`,
+        no: "",
+        yes: "Ok",
+      });
+    });
+
     socket.on("startGame", (data) => {
       const currentPlayer = data.p1.token === getPlayer().token ? "p1" : "p2";
 
@@ -1692,7 +1736,7 @@
     savePropierties("token", guid());
   }
 
-  Screen();
+  Screen("PlayFriends");
   $on(document, "contextmenu", (event) => event.preventDefault());
   $on(window, "resize", onWindowResize);
   onWindowResize();

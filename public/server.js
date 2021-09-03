@@ -94,7 +94,7 @@ module.exports = {
       //   }
       // }
 
-      io.sockets.in(data.room).emit(data.type, data);
+      io.sockets.in(data.room).emit("action", data);
     });
 
     /**
