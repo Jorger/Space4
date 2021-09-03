@@ -17,7 +17,6 @@ body {
   overflow: hidden;
   position: fixed;
   user-select: none;
-  /* -webkit-tap-highlight-color: transparent; */
 }
 
 div {
@@ -55,10 +54,6 @@ a:visited {
   color: black;
 }
 
-/* #render div.wh {
-  z-index: 3;
-} */
-
 @keyframes aS {
   from {
     transform: translateY(-2000px);
@@ -67,11 +62,6 @@ a:visited {
     transform: translateY(-150px);
   }
 }
-
-/* @keyframes scale {
-  0%   {transform: scale(.8);}
-  100% {transform: scale(1.5);}
-} */
 
 @keyframes beat {
   0% {
@@ -188,13 +178,10 @@ meteor {
 /* Estilos para el board */
 board {
   position: relative;
-  /* position: absolute;
-  bottom: 50px; */
 }
 
 holes {
   background: linear-gradient(to bottom, #c0c0c0 0%, #b1b1b1 100%);
-  /* background: linear-gradient(to bottom, #ffeb3b 0%, #009688 100%); */
   border-radius: 10px;
   box-shadow: inset 0px 0px 9px 6px #6c6b6b;
   display: block;
@@ -215,7 +202,6 @@ board > meteor {
 /* Fin estilos board */
 
 /* Para los estilos del avatar */
-
 .progress-ring__circle {
   transition: 0.35s stroke-dashoffset;
   transform: rotate(-90deg);
@@ -238,8 +224,6 @@ avatar-image,
   overflow: hidden;
   text-align: center;
   width: 100px;
-  /* background: linear-gradient(145deg, #f0f0f0, #cacaca);
-  box-shadow: 11px 12px 60px #bebebe, -15px -11px 60px #ffffff; */
 }
 
 avatar-image.blink {
@@ -282,9 +266,6 @@ avatar-name a {
 /* Estilos para el logo */
 .logo {
   font-size: 60px;
-  /* color: #0066b685;
-  text-shadow: 0 0 5px #FFF, 0 0 10px #FFF, 0 0 15px #FFF, 0 0 20px #2196f3, 0 0 30px #2196f3, 0 0 40px #2196f3, 0 0 55px #2196f3, 0 0 75px #2196f3; */
-  /* color: #FFFFFF; */
   text-shadow: #fff 0px 0px 5px, #fff 0px 0px 10px, #fff 0px 0px 15px,
     #ff2d95 0px 0px 20px, #ff2d95 0px 0px 30px, #ff2d95 0px 0px 40px,
     #ff2d95 0px 0px 50px, #ff2d95 0px 0px 75px;
@@ -319,9 +300,7 @@ modal.show {
 
 .ms {
   backdrop-filter: blur(5px);
-  /* background: rgb(28 33 125 / 26%); */
   background: #b6b7c742;
-  /* background-color: rgb(0 0 0 / 20%); */
 }
 
 .mw {
@@ -329,16 +308,11 @@ modal.show {
 }
 
 .mc {
-  /* border: 1px solid red; */
   border-radius: 5px;
-  /* height: 40%; */
   overflow: hidden;
   width: 71%;
   background: white;
   overflow: hidden;
-  /* border-radius: .25em .25em .4em .4em; */
-  /* text-align: center; */
-  /* box-shadow: 0 0 20px rgba(0, 0, 0, 0.2); */
 }
 
 .mc .txt {

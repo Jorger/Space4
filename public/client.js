@@ -53,6 +53,38 @@
   const setHtml = (element, html) => (element.innerHTML = html);
   const ObjectKeys = (obj) => Object.keys(obj);
 
+  const copyText = (text) => {
+    const input = document.createElement("input");
+    input.setAttribute("value", text);
+    document.body.appendChild(input);
+    input.select();
+    const result = document.execCommand("copy");
+    document.body.removeChild(input);
+    return result;
+  };
+
+  const getUrlParams = () => {
+    let params = [];
+
+    const queryString = window.location.search;
+
+    if (queryString[0] === "?") {
+      params = queryString
+        .slice(1)
+        .split("&")
+        .map((paramPair) => {
+          let key, value;
+          [key, value] = paramPair.split("=");
+          return {
+            key,
+            value,
+          };
+        });
+    }
+
+    return params;
+  };
+
   /**
    * Guadar la información dada en localStorage/sessionStorage
    * @param {*} data
@@ -233,6 +265,7 @@
     token: getValueFromCache("token", ""),
   });
 
+  const isValidRoom = (value) => /^\d+$/.test(value) && value.length === 5;
   // fin de utilidades
 
   /**
@@ -365,7 +398,7 @@
    * Renderiza el modal del juego
    */
   const Modal = {
-    show({ txt, icon = "", yes = "yes", no = "no", cb }) {
+    show({ txt, icon = "", yes = "yes", no = "no", cb, timer = 0 }) {
       $("modal .txt").innerHTML =
         (icon
           ? `<p ${inlineStyles({ "font-size": "3rem" })}>${icon}</p>`
@@ -376,11 +409,23 @@
       $("modal #btn2").textContent = no;
       removeClass($("modal"), "hide");
       addClass($("modal"), "show");
+      if (this.interval) {
+        clearTimeout(this.interval);
+      }
+      if (timer) {
+        this.interval = setTimeout(() => {
+          this.hide();
+        }, timer);
+      }
+
       this.callback = cb;
     },
     hide() {
       removeClass($("modal"), "show");
       addClass($("modal"), "hide");
+      if (this.interval) {
+        clearTimeout(this.interval);
+      }
     },
     render: () =>
       `<modal class="hide wh"><div class="ms wh"></div><div class="mw wh cs"><div class=mc><div class="wh cs txt"></div><div class="mb wh cs"><button id=btn1></button><button id=btn2></button></div></div></div></modal>`,
@@ -499,10 +544,6 @@
     // Fallback si la animación no se ejecuta
     let intervalFallbackAnimation;
     let runFallback = false;
-    /*
-    1 es azul
-    2 es rojo
-    */
 
     /**
      * Limpiar los intervalos del juego
@@ -1033,8 +1074,6 @@
      */
     const botTurn = debounce(() => {
       let positionIndex = getRandomMove();
-      // const playerColor = METEOR_COLORS[PLAYER_DATA[0].color - 1];
-      // const botColor = METEOR_COLORS[PLAYER_DATA[1].color - 1];
       let findPossibleMovement = false;
       // Valida si realiza el proceso de predecir el movimiento
       // Si es de tipo medium, será aleatorio
@@ -1267,6 +1306,7 @@
           })}>User disconnected</h2><p>Your partner has left the room</p>`,
           no: "",
           yes: "Ok",
+          timer: 2000,
         });
       });
     }
@@ -1334,7 +1374,11 @@
     }</avatar-name>`;
   };
 
-  // Para el cargador de tiempo:
+  /**
+   * Renderiza el avatar de un jugador y su nombre
+   * @param {*} param0
+   * @returns
+   */
   const Avatar = ({
     name,
     stylesImage = {},
@@ -1392,8 +1436,6 @@
       "font-size": "15px",
     };
 
-    console.log(data);
-
     setHtml(
       $("#render"),
       `<div class=cs ${inlineStyles({
@@ -1432,7 +1474,29 @@
             })}
           </div>
         </div>
-        <button class=button>Cancel</button>
+        ${
+          data.createRoom
+            ? `<div ${inlineStyles({
+                width: "90%",
+              })}><fieldset class=cs ${inlineStyles({
+                "margin-top": 0,
+                "flex-direction": "column",
+              })}>
+                  <legend>Play with Friends</legend>
+                  <code ${inlineStyles({
+                    "font-size": "50px",
+                    "font-weight": "bold",
+                    "margin-bottom": "10px",
+                    "text-align": "center",
+                  })}>${data.friendRoom}</code>
+                  <button id=share class=button ${inlineStyles({
+                    "margin-bottom": "20px",
+                  })}>Share Room</button>
+                  <p>Share this room code to play with your friend</p>
+                </fieldset></div>`
+            : ""
+        }
+        <button id=cancel class=button>Cancel</button>
       </div>`
     );
 
@@ -1442,10 +1506,52 @@
     };
 
     $on($("#back"), "click", returnHome);
-    $on($(".button"), "click", returnHome);
+    $on($("#cancel"), "click", returnHome);
+
+    if (data.createRoom) {
+      $on($("#share"), "click", () => {
+        const supportedShare = "share" in navigator;
+        const url = `${location.href}?room=${data.friendRoom}`;
+        if (supportedShare) {
+          navigator
+            .share({
+              title: "Space4",
+              text: "Come Play a Space4 match with me :)",
+              url,
+            })
+            .then(() => {
+              Modal.show({
+                icon: "🥰",
+                txt: "<h2>Thanks for sharing</h2>",
+                no: "",
+                yes: "Ok",
+                timer: 2000,
+              });
+            })
+            .catch((err) => {
+              Modal.show({
+                icon: "⚠️",
+                txt: `<h2>Error</h2><p>${err}</p>`,
+                no: "",
+                yes: "Ok",
+                timer: 2000,
+              });
+            });
+        } else {
+          copyText(url);
+          Modal.show({
+            icon: "👍",
+            txt: `<h2>URL copied</h2><p>The URL of the room has been copied into your clipboard</p>`,
+            no: "",
+            yes: "Ok",
+            timer: 2000,
+          });
+        }
+      });
+    }
 
     // Configura la conexión del socket del juego...
-    configureSocket();
+    configureSocket(data);
   };
 
   const PlayFriends = () => {
@@ -1484,17 +1590,28 @@
     // Para los eventos...
     $on($("form"), "submit", (e) => {
       e.preventDefault();
-      console.log("enviar el form");
+      const value = $("#code").value;
+      if (isValidRoom(value)) {
+        Screen("SearchOpponent", {
+          friendRoom: value,
+          type: "friend",
+        });
+      } else {
+        Modal.show({
+          icon: "⚠️",
+          txt: "<h2>Invalid code</h2><p>The code of the room must be a number and five characters</p>",
+          no: "",
+          yes: "Ok",
+        });
+      }
     });
 
     $on($("#f-1 button"), "click", () => {
-      // const room = randomNumber(10000, 99999);
-      // console.log({ room });
       Screen("SearchOpponent", {
         createRoom: true,
-        room: randomNumber(10000, 99999),
+        friendRoom: randomNumber(10000, 99999),
+        type: "friend",
       });
-      // console.log("CREAR LA SALA");
     });
   };
 
@@ -1699,7 +1816,17 @@
     // Envia la data del usuario actual al server y busca un jugador
     socket.on("connect", () => {
       socket.emit("newUser", { ...options, player: getPlayer() }, (error) => {
-        console.log("Data");
+        if (error) {
+          Screen("PlayFriends");
+          disconnectSocket();
+          Modal.show({
+            icon: "⚠️",
+            txt: `<h2>${error}</h2>`,
+            no: "",
+            yes: "Ok",
+            timer: 2000,
+          });
+        }
       });
     });
 
@@ -1711,6 +1838,7 @@
         txt: `<h2>Error connecting to server</h2>`,
         no: "",
         yes: "Ok",
+        timer: 2000,
       });
     });
 
@@ -1736,7 +1864,26 @@
     savePropierties("token", guid());
   }
 
-  Screen("PlayFriends");
+  const initialScreen = { screen: "Lobby", param: {} };
+
+  const urlParams = getUrlParams();
+  if (urlParams.length !== 0) {
+    const filterRoom = urlParams.filter((v) => v.key === "room");
+    if (filterRoom.length) {
+      const urlRoom = filterRoom[0].value || "";
+      if (isValidRoom(urlRoom)) {
+        initialScreen.screen = "SearchOpponent";
+        initialScreen.param = {
+          friendRoom: urlRoom,
+          type: "friend",
+        };
+      }
+    }
+    const cleanURL =
+      location.protocol + "//" + location.host + location.pathname;
+    history.replaceState({}, document.title, cleanURL);
+  }
+  Screen(initialScreen.screen, initialScreen.param);
   $on(document, "contextmenu", (event) => event.preventDefault());
   $on(window, "resize", onWindowResize);
   onWindowResize();

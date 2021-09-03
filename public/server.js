@@ -13,29 +13,48 @@ module.exports = {
      */
     socket.on(
       "newUser",
-      ({ type = "online", friendRoom = "", player = {} }, callback) => {
-        // let room = "";
-        console.log({ type, friendRoom, player });
+      (
+        { type = "online", friendRoom = "", createRoom = false, player = {} },
+        callback
+      ) => {
+        // Primero validar el tipo de conexión...
         // Traer los usuarios que estén disponibles
         // Se filtrará que no permita al mismo usuario
         const filteredAvailableUsers = availableUsers.filter(
           (v) => v.type === type && v.player.token !== player.token
         );
 
-        console.log("filteredAvailableUsers");
-        console.log(filteredAvailableUsers);
+        if (
+          (filteredAvailableUsers.length !== 0 && !createRoom) ||
+          (type === "friend" && !createRoom)
+        ) {
+          // Si es de tipo jugar con amigos, se debe buscar que exista la sala...
+          let indexPartner = -1;
 
-        if (filteredAvailableUsers.length !== 0) {
-          // Hay usuarios dipsonibles para jugar....
-          const indexPartner = randomNumber(
-            0,
-            filteredAvailableUsers.length - 1
-          );
+          if (type === "online") {
+            // Hay usuarios dipsonibles para jugar....
+            indexPartner = randomNumber(0, filteredAvailableUsers.length - 1);
+          }
+
+          if (type === "friend") {
+            indexPartner = filteredAvailableUsers.findIndex(
+              (v) => v.room === friendRoom
+            );
+
+            // Si existe la sala
+            if (indexPartner < 0) {
+              return callback("The room does not exist");
+            }
+          }
+
+          if (indexPartner < 0) {
+            return callback("The type of game is not valid");
+          }
+
           const startColor = randomNumber(0, 1);
           const newRoom = availableUsers[indexPartner].room;
           const partner = availableUsers[indexPartner].player;
           const playerStartsGame = randomNumber(1, 2);
-          console.log({ indexPartner });
           // Ya se tiene la información del segundo jugador...
           const gameData = {
             room: newRoom,
@@ -53,18 +72,13 @@ module.exports = {
           };
 
           socket.join(newRoom);
-
           rooms.push(gameData);
-          console.log(gameData);
-          const indexRoom = rooms.findIndex((v) => v.room === newRoom);
-          console.log("EL INDEX DLE PLAYER QUE SE VA");
-          console.log({ indexRoom });
+          const indexRoom = availableUsers.findIndex((v) => v.room === newRoom);
           availableUsers.splice(indexRoom, 1);
           io.sockets.in(newRoom).emit("startGame", gameData);
         } else {
           // Se guardará el usuario en el lstado de usuarios disponibles...
-          // availableUsers.push(player);
-          const room = type === "online" ? guid() : friendRoom;
+          const room = String(type === "online" ? guid() : friendRoom);
 
           availableUsers.push({
             room,
@@ -82,18 +96,6 @@ module.exports = {
     );
 
     socket.on("action", (data) => {
-      // drop -> realiza lanzamiento de un elemento
-
-      // Indica que el juego terminó
-      // if (data.type === 4) {
-      //   const indexRoom = rooms.findIndex((v) => v.room === data.room);
-      //   if (indexRoom >= 0) {
-      //     // Se elimina la sala así se evita que cuando se desconecten los usuarios
-      //     // se emita el mensaje de desconexión
-      //     rooms.splice(indexRoom, 1);
-      //   }
-      // }
-
       io.sockets.in(data.room).emit("action", data);
     });
 
@@ -102,16 +104,9 @@ module.exports = {
      */
     socket.on("disconnect", () => {
       // Buscar la sala a la cual pertenece este socket
-      // Se debería validar después si es un boarda/table para el party mode
-      console.log("se desconecta un usuario");
-      console.log("EL USUARIO QUE SE FUE");
-      console.log(socket.id);
-
       const indexRoom = rooms.findIndex(
         ({ p1, p2 }) => p1.id === socket.id || p2.id === socket.id
       );
-
-      console.log({ indexRoom });
 
       if (indexRoom >= 0) {
         // Se emite al jugador que quedó que se ha desconectado el otro jugador
@@ -123,8 +118,6 @@ module.exports = {
         const indexPlayer = availableUsers.findIndex(
           ({ player }) => player.id === socket.id
         );
-
-        console.log({ indexPlayer });
 
         // Se saca al usuario del listado de jugadores disponibles
         if (indexPlayer >= 0) {
