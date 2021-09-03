@@ -52,8 +52,8 @@ module.exports = {
           }
 
           const startColor = randomNumber(0, 1);
-          const newRoom = availableUsers[indexPartner].room;
-          const partner = availableUsers[indexPartner].player;
+          const newRoom = filteredAvailableUsers[indexPartner].room;
+          const partner = filteredAvailableUsers[indexPartner].player;
           const playerStartsGame = randomNumber(1, 2);
           // Ya se tiene la información del segundo jugador...
           const gameData = {

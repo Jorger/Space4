@@ -366,6 +366,11 @@
             styles: {
               "margin-bottom": "10px",
               "font-size": "18px",
+              overflow: "hidden",
+              "white-space": "nowrap",
+              "text-overflow": "ellipsis",
+              "text-align": "center",
+              width: "120px",
             },
           })}
           ${AvatarImage({
