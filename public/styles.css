@@ -55,43 +55,37 @@ a:visited {
 }
 
 @keyframes aS {
-  from {
-    transform: translateY(-2000px);
-  }
-  to {
-    transform: translateY(-150px);
-  }
+  from { transform: translateY(-2000px); }
+  to { transform: translateY(-150px); }
 }
 
 @keyframes beat {
-  0% {
-    transform: scale(0.8);
-  }
-
-  14% {
-    transform: scale(1.5);
-  }
-
-  28% {
-    transform: scale(0.8);
-  }
-
-  42% {
-    transform: scale(1.5);
-  }
-
-  70% {
-    transform: scale(0.8);
-  }
+  0% { transform: scale(0.8); }
+  14% { transform: scale(1.5); }
+  28% { transform: scale(0.8); }
+  42% { transform: scale(1.5); }
+  70% { transform: scale(0.8); }
 }
 
 @keyframes vs {
-  from {
-    transform: translateY(0);
-  }
-  to {
-    transform: translateY(-90%);
-  }
+  from { transform: translateY(0); }
+  to { transform: translateY(-90%); }
+}
+
+@keyframes bIn {
+  from, 20%, 40%, 60%, 80%, to { animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1); }
+  0% { opacity: 0; transform: scale3d(0.3, 0.3, 0.3);}
+  20% { transform: scale3d(1.1, 1.1, 1.1); }
+  40% { transform: scale3d(0.9, 0.9, 0.9); }
+  60% { opacity: 1; transform: scale3d(1.03, 1.03, 1.03); }
+  80% { transform: scale3d(0.97, 0.97, 0.97); }
+  to { opacity: 1; transform: scale3d(1, 1, 1); }
+}
+
+@keyframes bDown {
+  0% { transform: translateY(-1200px) scale(0.7); opacity: 0.7; }
+  80% { transform: translateY(0px) scale(0.7); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 .button {
@@ -166,18 +160,15 @@ meteor {
 }
 
 @keyframes cr {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(-359deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-359deg); }
 }
 /* Fin de los estilos del meteoro */
 
 /* Estilos para el board */
 board {
   position: relative;
+  animation: bIn 0.5s both;
 }
 
 holes {
@@ -253,12 +244,8 @@ avatar-name a {
 }
 
 @keyframes blink {
-  25% {
-    box-shadow: 0 0 30px 11px var(--turn);
-  }
-  75% {
-    box-shadow: 0 0 0 transparent;
-  }
+  25% { box-shadow: 0 0 30px 11px var(--turn); }
+  75% { box-shadow: 0 0 0 transparent; }
 }
 
 /* Fin de los estilos del avatar */
@@ -270,6 +257,7 @@ avatar-name a {
     #ff2d95 0px 0px 20px, #ff2d95 0px 0px 30px, #ff2d95 0px 0px 40px,
     #ff2d95 0px 0px 50px, #ff2d95 0px 0px 75px;
   margin-bottom: 30px;
+  animation: bDown 0.5s both;
 }
 /* fin de los estilos del logo */
 
@@ -345,26 +333,13 @@ modal.hide .mc {
 }
 
 @keyframes fDown {
-  from {
-    opacity: 0;
-    transform: translate3d(0, -100%, 0);
-  }
-
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
+  from { opacity: 0; transform: translate3d(0, -100%, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
 @keyframes fUp {
-  from {
-    opacity: 1;
-  }
-
-  to {
-    opacity: 0;
-    transform: translate3d(0, -100%, 0);
-  }
+  from { opacity: 1; }
+  to { opacity: 0; transform: translate3d(0, -100%, 0); }
 }
 
 /* fin estilos del modal */
@@ -467,6 +442,7 @@ fieldset {
   border: 1px solid rgba(255, 255, 255, 0.18);
   padding: 20px;
   margin: 30px 0;
+  animation: bIn 1s both;
 }
 
 fieldset form {
