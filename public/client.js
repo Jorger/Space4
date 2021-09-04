@@ -1,5 +1,6 @@
 "use strict";
-
+// Librería zzfx para los sonidos
+let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,M=0,R=0,i=0,r=0,s=0,o=0,u=0,c=0,d=0,X=1,b=0,w=0)=>{let l,m,C=2*Math.PI,V=M*=500*C/zzfxR**2,A=(0<u?1:-1)*C/4,B=f*=(1+2*t*Math.random()-t)*C/zzfxR,I=[],P=0,g=0,k=0,D=1,S=0,j=0,p=0;for(R*=500*C/zzfxR**3,u*=C/zzfxR,i*=C/zzfxR,r*=zzfxR,s=zzfxR*s|0,m=(x=99+zzfxR*x)+(b*=zzfxR)+(a*=zzfxR)+(e*=zzfxR)+(d*=zzfxR)|0;k<m;I[k++]=p)++j%(100*c|0)||(p=n?1<n?2<n?3<n?Math.sin((P%C)**3):Math.max(Math.min(Math.tan(P),1),-1):1-(2*P/C%2+2)%2:1-4*Math.abs(Math.round(P/C)-P/C):Math.sin(P),p=(s?1-w+w*Math.sin(2*Math.PI*k/s):1)*(0<p?1:-1)*Math.abs(p)**h*z*zzfxV*(k<x?k/x:k<x+b?1-(k-x)/b*(1-X):k<x+b+a?X:k<m-d?(m-k-d)/e*X:0),p=d?p/2+(d>k?0:(k<m-d?1:(m-k)/d)*I[k-d|0]/2):p),P+=(l=(f+=M+=R)*Math.sin(g*u-A))-l*o*(1-1e9*(Math.sin(k)+1)%2),g+=l-l*o*(1-1e9*(Math.sin(k)**2+1)%2),D&&++D>r&&(f+=i,B+=i,D=0),!s||++S%s||(f=B,M=V,D=D||1);return(z=zzfxX.createBuffer(1,m,zzfxR)).getChannelData(0).set(I),(f=zzfxX.createBufferSource()).buffer=z,f.connect(zzfxX.destination),f.start(),f}),zzfxX=new(window.AudioContext||webkitAudioContext),zzfxR=44100;
 (() => {
   // Utilidades
   const $ = document.querySelector.bind(document);
@@ -12,14 +13,17 @@
   const NUM_COLS = 7;
   const MAX_METEORITES = 4;
   const AVATARS = ["👩‍🚀","👩🏽‍🚀","👨‍🚀","👩🏻‍🚀","👨🏼‍🚀","👩🏼‍🚀","👩🏾‍🚀","👨🏽‍🚀","👨🏻‍🚀","👨🏿‍🚀","👩🏿‍🚀","👨🏾‍🚀"];
+  const SOUNDS = { beep : [2,.8,999,,,,,1.5,,.3,-99,.1,1.63,,,.11,.22], click: [,,539,0,.04,.29,1,1.92,,,567,.02,.02,,,,.04], win : [,,172,.8,,.8,1,.76,7.7,3.73,-482,.08,.15,,.14], ring : [,0,1600,.13,.52,.61,1,1.1,,,,,,.1,,.14], drop : [,,1e3,,,.5,,,,,99,.01,.03]};
   const METEOR_COLORS = ["blue", "red"];
   const CHAT_MESSAGES = {
     msg: ["TODAY IS YOUR DAY","WELL PLAYED","GOOG GAME","TODAY IS MY DAY","NICE MOVE","HEHEHEHE","OOPS!","THANKS","PLAY FAST","HI","YEAH","UNLUCKY"],
     emoji: ["😝", "🤓", "😟", "👊", "👍", "😨", "😂", "😭", "🥰", "🤬"],
   };
+  const supportedShare = "share" in navigator;
   const CACHE_KEY = "space-four";
   let socket;
   let connectedSocket = false;
+  let intervalSound;
   // Utilidades
   $("html").style.cssText += `--h: ${BASE_HEIGHT}px; --w: ${BASE_WIDTH}px; --turn: red;`;
   const setHtml = (element, html) => (element.innerHTML = html);
@@ -46,21 +50,14 @@
    */
   const getUrlParams = () => {
     let params = [];
-
     const queryString = window.location.search;
 
     if (queryString[0] === "?") {
-      params = queryString
-        .slice(1)
-        .split("&")
-        .map((paramPair) => {
+      params = queryString.slice(1).split("&").map((paramPair) => {
           let key, value;
           [key, value] = paramPair.split("=");
-          return {
-            key,
-            value,
-          };
-        });
+          return { key, value };
+      });
     }
 
     return params;
@@ -96,11 +93,7 @@
   /**
    * Dada una propiedad, devuelve la información de la misma
    */
-  const getValueFromCache = (
-    key = "",
-    initial,
-    storageType = "localStorage"
-  ) => {
+  const getValueFromCache = (key = "", initial, storageType = "localStorage") => {
     const localCache = getDataCache(storageType);
     return localCache[key] || initial;
   };
@@ -225,6 +218,53 @@
   const getPlayer = () => ({ name: getValueFromCache("name", ""), avatar: getValueFromCache("avatar", 0), token: getValueFromCache("token", "")});
 
   const isValidRoom = (value) => /^\d+$/.test(value) && value.length === 5;
+
+  const shareAction = (title = "", text = "", url = "", alternativeText = "", timer = 0) => {
+    if (supportedShare) {
+      navigator
+        .share({ title, text, url })
+        .then(() => {
+          Modal.show({ icon: "🥰", txt: "<h2>Thanks for sharing</h2>", no: "", yes: "Ok", timer: 2000 });
+        })
+        .catch((err) => {
+          Modal.show({ icon: "⚠️", txt: `<h2>Error</h2><p>${err}</p>`, no: "", yes: "Ok", timer: 2000 });
+        });
+    } else {
+      copyText(url);
+      Modal.show({ icon: "👍", txt: alternativeText, no: "", yes: "Ok", timer });
+    }
+  }
+
+  const handleSound = () => {
+    if($("#sounds")) {
+      const newSounds = getValueFromCache("sounds", "yes") === "yes" ? "no" : "yes";
+      savePropierties("sounds", newSounds);
+      $("#sounds").textContent = newSounds === "yes" ? "🔊" : "🔇";
+    }
+  }
+
+  const handleShare = () => shareAction("Space4", "Play Space4 #js13k 2021 edition by Jorge Rubiano @ostjh", location.href, "<h2>URL copied</h2><p>The url has been copied to your clipboard, share it with your friends</p>")
+  
+  const playSound = {
+    play(type = "click", interval = 0) {
+      if(getValueFromCache("sounds", "yes") === "yes") {
+        zzfx(...SOUNDS[type]);
+      }
+
+      if(interval) {
+        intervalSound = setInterval(() => {
+          if(getValueFromCache("sounds", "yes") === "yes") {
+            zzfx(...SOUNDS[type]);
+          }
+        }, 2000)
+      }
+    },
+    stop() {
+      if(intervalSound) {
+        clearInterval(intervalSound);
+      }
+    }
+  }
   // fin de utilidades
 
   /**
@@ -453,6 +493,11 @@
         intervalOnline = setInterval(() => {
           setProgress(counterTmp);
           counterTmp--;
+
+          if(counterTmp <= 50 && counterTmp % 4 === 0) {
+            playSound.play("beep");
+          }
+
           if (counterTmp < 0) {
             clearInterval(intervalOnline);
             // Se debe hacer el lanzamiento aleatorio
@@ -539,6 +584,7 @@
         showModal.show = true;
         showModal.icon = PLAYER_DATA[playerHasTurn - 1].image;
         showModal.txt = `<h2>${PLAYER_DATA[playerHasTurn - 1].name} has won</h2><p>Do you want to play again?</p>`;
+        playSound.play("win", 2000);
       }
 
       if (showModal.show) {
@@ -546,6 +592,7 @@
         Modal.show({
           ...showModal,
           cb(answer) {
+            playSound.stop();
             if (isOffline) {
               answer ? resetGame() : Screen();
             } else {
@@ -775,6 +822,7 @@
 
       if (animationOn || newPosition < 0) return;
       $("#turn").innerHTML = "...";
+      playSound.play("drop");
 
       const newMeteor = $(`#m-${meteorCounter}`);
       // Guarda el color en la grilla
@@ -974,10 +1022,11 @@
       runFallback = false;
       clearIntervals();
       showPlayerTurn();
+      playSound.stop();
     };
 
     // Renderiza el html del juego
-    setHtml($("#render"), `<div class='wh cs' ${inlineStyles({"flex-direction": "column","z-index": 3})}>${ButtonBack("EXIT", { left: "45%" })}${Gamers(PLAYER_DATA, !isOffline)}<div id=turn ${inlineStyles({ "font-size": "25px", "margin-bottom": "30px"})}></div>${Board()}${!isOffline ? Chat() : ""}</div>`);
+    setHtml($("#render"), `<div class='wh cs' ${inlineStyles({"flex-direction": "column","z-index": 3})}>${ButtonSounds()}${ButtonBack()}${Gamers(PLAYER_DATA, !isOffline)}<div id=turn ${inlineStyles({ "font-size": "25px", "margin-bottom": "30px"})}></div>${Board()}${!isOffline ? Chat() : ""}</div>`);
 
     // Eventos para el chat
     if (!isOffline) {
@@ -1048,6 +1097,8 @@
       });
     });
 
+    $on($("#sounds"), "click", handleSound);
+
     if (connectedSocket && socket) {
       socket.on("action", (data) => {
         if (data.currentPlayer.token !== currentPlayer.token) {
@@ -1061,6 +1112,7 @@
           }
 
           if (type === "playAgain") {
+            playSound.stop();
             Modal.show({
               icon: "😃",
               txt: `<h2 ${inlineStyles({ "text-align": "center" })}>Your opponent wants to play again</h2>`,
@@ -1111,18 +1163,18 @@
     showPlayerTurn();
   };
 
-  const ButtonBack = (label = "Back", style = {}) => `<button id=back  ${inlineStyles({
+  const ButtonBack = () => `<button id=back  ${inlineStyles({
       position: "absolute",
       left: "5%",
-      top: "5%",
-      "font-size": "20px",
+      top: "3%",
+      "font-size": "2em",
       background: "no-repeat",
       color: "white",
       border: 0,
       cursor: "pointer",
       "font-weight": "bold",
       ...style,
-    })}>${label}</button>`;
+    })}>⬅️</button>`;
 
   /**
    * Renderizará la pantalla de selección de dificultad en modo Bot
@@ -1167,7 +1219,7 @@
   const SearchOpponent = (data = {}) => {
     const currentPlayer = getPlayer();
     const stylesName = { "margin-top": "15px", "font-weight": "bold", "font-size": "15px" };
-    setHtml($("#render"), `<div class=cs ${inlineStyles({ "flex-direction": "column", width: "100%", "z-index": 5 })}>${ButtonBack()}${Logo()}<div class="cs" ${inlineStyles({margin: "50px 0", width: "90%", "justify-content": "space-around" })}>${Avatar({ name: currentPlayer.name, avatar: { image: AVATARS[currentPlayer.avatar], index: currentPlayer.avatar}, stylesImage: { width: "70px", height: "70px", "font-size": "3.5rem" }, stylesName})}<h1>Vs</h1><div id="vs" class=cs ${inlineStyles({"flex-direction": "column"})}>${AvatarSearch()}${AvatarName({name: "Searching...", styles: stylesName})}</div></div>${data.createRoom ? `<div ${inlineStyles({ width: "90%" })}><fieldset class=cs ${inlineStyles({ "margin-top": 0, "flex-direction": "column" })}><legend>Play with Friends</legend><code ${inlineStyles({"font-size": "50px", "font-weight": "bold", "margin-bottom": "10px", "text-align": "center"})}>${data.friendRoom}</code><button id=share class=button ${inlineStyles({"margin-bottom": "20px"})}>Share Room</button><p>Share this room code to play with your friend</p></fieldset></div>` : ""}<button id=cancel class=button>Cancel</button></div>`);
+    setHtml($("#render"), `<div class=cs ${inlineStyles({ "flex-direction": "column", width: "100%", "z-index": 5 })}>${ButtonSounds()}${ButtonBack()}${Logo()}<div class="cs" ${inlineStyles({margin: "50px 0", width: "90%", "justify-content": "space-around" })}>${Avatar({ name: currentPlayer.name, avatar: { image: AVATARS[currentPlayer.avatar], index: currentPlayer.avatar}, stylesImage: { width: "70px", height: "70px", "font-size": "3.5rem" }, stylesName})}<h1>Vs</h1><div id="vs" class=cs ${inlineStyles({"flex-direction": "column"})}>${AvatarSearch()}${AvatarName({name: "Searching...", styles: stylesName})}</div></div>${data.createRoom ? `<div ${inlineStyles({ width: "90%" })}><fieldset class=cs ${inlineStyles({ "margin-top": 0, "flex-direction": "column" })}><legend>Play with Friends</legend><code ${inlineStyles({"font-size": "50px", "font-weight": "bold", "margin-bottom": "10px", "text-align": "center"})}>${data.friendRoom}</code><button id=share class=button ${inlineStyles({"margin-bottom": "20px"})}>Share Room</button><p>Share this room code to play with your friend</p></fieldset></div>` : ""}<button id=cancel class=button>Cancel</button></div>`);
 
     const returnHome = () => {
       Screen();
@@ -1176,46 +1228,12 @@
 
     $on($("#back"), "click", returnHome);
     $on($("#cancel"), "click", returnHome);
+    $on($("#sounds"), "click", handleSound);
+    playSound.play("ring", 2000);
 
     if (data.createRoom) {
       $on($("#share"), "click", () => {
-        const supportedShare = "share" in navigator;
-        const url = `${location.href}?room=${data.friendRoom}`;
-        if (supportedShare) {
-          navigator
-            .share({
-              title: "Space4",
-              text: "Come Play a Space4 match with me :)",
-              url,
-            })
-            .then(() => {
-              Modal.show({
-                icon: "🥰",
-                txt: "<h2>Thanks for sharing</h2>",
-                no: "",
-                yes: "Ok",
-                timer: 2000,
-              });
-            })
-            .catch((err) => {
-              Modal.show({
-                icon: "⚠️",
-                txt: `<h2>Error</h2><p>${err}</p>`,
-                no: "",
-                yes: "Ok",
-                timer: 2000,
-              });
-            });
-        } else {
-          copyText(url);
-          Modal.show({
-            icon: "👍",
-            txt: `<h2>URL copied</h2><p>The URL of the room has been copied into your clipboard</p>`,
-            no: "",
-            yes: "Ok",
-            timer: 2000,
-          });
-        }
+        shareAction("Space4", "Come Play a Space4 match with me :)", `${location.href}?room=${data.friendRoom}`, "<h2>URL copied</h2><p>The URL of the room has been copied into your clipboard</p>", 2000);
       });
     }
 
@@ -1255,12 +1273,14 @@
     });
   };
 
+  const ButtonSounds = () => `<button id=sounds>${getValueFromCache("sounds", "yes") === "yes" ? "🔊" : "🔇"}</button>`
+  const ButtonShare = () => `<button id=sh>🚀</button>`;
   /**
    * Renderiza la página de Looby
    */
   const Lobby = () => {
     const currentPlayer = getPlayer();
-    setHtml($("#render"), `<div class=cs ${inlineStyles({"flex-direction": "column","z-index": 5})}>${Logo()}${Avatar({ name: currentPlayer.name, avatar: {image: AVATARS[currentPlayer.avatar], index: currentPlayer.avatar}, stylesName: { "margin-top": "15px", "font-weight": "bold", "font-size": "25px"}, edit: true})}<div class='cs options' ${inlineStyles({ "flex-direction": "column", "margin-top": "25px"})}>${[["Two Players", "two"], ["Vs Bot", "bot"], ["Play with friends", "friend"], ["Play Online", "online"]].map((v, i) => `<button class=button id=${v[1]} ${inlineStyles({ width: "260px", "margin-bottom": "20px", "animation": `bIn ${(i * 0.5) + 0.5}s both`})}>${v[0]}</button>`).join("")}</div><a id="about" ${inlineStyles({color: "white", "z-index": 2, "font-size": "20px"})} href="#">About</a></div>`);
+    setHtml($("#render"), `<div class=cs ${inlineStyles({"flex-direction": "column","z-index": 5})}>${ButtonShare()}${ButtonSounds()}${Logo()}${Avatar({ name: currentPlayer.name, avatar: {image: AVATARS[currentPlayer.avatar], index: currentPlayer.avatar}, stylesName: { "margin-top": "15px", "font-weight": "bold", "font-size": "25px"}, edit: true})}<div class='cs options' ${inlineStyles({ "flex-direction": "column", "margin-top": "25px"})}>${[["Two Players", "two"], ["Vs Bot", "bot"], ["Play with friends", "friend"], ["Play Online", "online"]].map((v, i) => `<button class=button id=${v[1]} ${inlineStyles({ width: "260px", "margin-bottom": "20px", "animation": `bIn ${(i * 0.5) + 0.5}s both`})}>${v[0]}</button>`).join("")}</div><a id="about" ${inlineStyles({color: "white", "z-index": 2, "font-size": "20px"})} href="#">About</a></div>`);
 
     // Para el evento del about
     $on($("#about"), "click", (e) => {
@@ -1298,6 +1318,9 @@
         savePropierties("name", shortName);
       }
     });
+    
+    $on($("#sounds"), "click", handleSound);
+    $on($("#sh"), "click", handleShare);
   };
 
   /**
@@ -1314,6 +1337,7 @@
       PlayFriends,
     };
 
+    playSound.stop();
     Handler[screen](params);
 
     // Ocultar el meteoro global en la pantalla del juego
@@ -1331,6 +1355,14 @@
   setHtml($("#root"), `${Modal.render()}<div id="render" class="wh cs"></div>${new Array(3).fill(null).map((_, i) => `<div class='star-${i}'></div>`).join("")}${Meteor({id: "m-global",style: {width: `${BASE_WIDTH}px`, height: `${BASE_WIDTH}px`, top: `${BASE_HEIGHT - BASE_WIDTH * 0.4}px`, "z-index": 1, animation: "cr 60s infinite linear"}})}`);
 
   Modal.events();
+
+  $on($("#root"), "click", (e) => {
+    const element = e.target;
+    const id = element.id || "";
+    if(["A", "BUTTON"].includes(element.nodeName) && ["h-", "msg-", "emoji-"].filter(v => id.includes(v)).length === 0) {
+      playSound.play();
+    }
+  });
 
   // Código para manejo de los sockets
   const disconnectSocket = () => {
@@ -1396,7 +1428,6 @@
   }
 
   const initialScreen = { screen: "Lobby", param: {} };
-
   const urlParams = getUrlParams();
   if (urlParams.length !== 0) {
     const filterRoom = urlParams.filter((v) => v.key === "room");

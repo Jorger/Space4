@@ -456,3 +456,17 @@ fieldset #code {
   text-align: center;
   width: 60%;
 }
+
+#sounds, #sh {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 2em;
+  position: absolute;
+  right: 5%;
+  top: 3%;
+}
+
+#sh {
+  left: 5%;
+}
