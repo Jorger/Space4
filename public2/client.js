@@ -1,4 +1,3 @@
-"use strict";
 // Librería zzfx para los sonidos
 let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,M=0,R=0,i=0,r=0,s=0,o=0,u=0,c=0,d=0,X=1,b=0,w=0)=>{let l,m,C=2*Math.PI,V=M*=500*C/zzfxR**2,A=(0<u?1:-1)*C/4,B=f*=(1+2*t*Math.random()-t)*C/zzfxR,I=[],P=0,g=0,k=0,D=1,S=0,j=0,p=0;for(R*=500*C/zzfxR**3,u*=C/zzfxR,i*=C/zzfxR,r*=zzfxR,s=zzfxR*s|0,m=(x=99+zzfxR*x)+(b*=zzfxR)+(a*=zzfxR)+(e*=zzfxR)+(d*=zzfxR)|0;k<m;I[k++]=p)++j%(100*c|0)||(p=n?1<n?2<n?3<n?Math.sin((P%C)**3):Math.max(Math.min(Math.tan(P),1),-1):1-(2*P/C%2+2)%2:1-4*Math.abs(Math.round(P/C)-P/C):Math.sin(P),p=(s?1-w+w*Math.sin(2*Math.PI*k/s):1)*(0<p?1:-1)*Math.abs(p)**h*z*zzfxV*(k<x?k/x:k<x+b?1-(k-x)/b*(1-X):k<x+b+a?X:k<m-d?(m-k-d)/e*X:0),p=d?p/2+(d>k?0:(k<m-d?1:(m-k)/d)*I[k-d|0]/2):p),P+=(l=(f+=M+=R)*Math.sin(g*u-A))-l*o*(1-1e9*(Math.sin(k)+1)%2),g+=l-l*o*(1-1e9*(Math.sin(k)**2+1)%2),D&&++D>r&&(f+=i,B+=i,D=0),!s||++S%s||(f=B,M=V,D=D||1);return(z=zzfxX.createBuffer(1,m,zzfxR)).getChannelData(0).set(I),(f=zzfxX.createBufferSource()).buffer=z,f.connect(zzfxX.destination),f.start(),f}),zzfxX=new(window.AudioContext||webkitAudioContext),zzfxR=44100;
 (() => {
@@ -67,15 +66,15 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
    * Guadar la información dada en localStorage/sessionStorage
    * @param {*} data
    */
-  const saveCache = (data, storageType = "localStorage") => {
-    window[storageType].setItem(CACHE_KEY, JSON.stringify(data));
+  const saveCache = (data) => {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
   };
 
   /**
-   * Obtener la data que está guardarda en localStorage/sessionStorage
+   * Obtener la data que está guardarda en localStorage
    */
-  const getDataCache = (storageType = "localStorage") => {
-    const data = window[storageType].getItem(CACHE_KEY) || "";
+  const getDataCache = () => {
+    const data = localStorage.getItem(CACHE_KEY) || "";
     return data !== "" ? JSON.parse(data) : {};
   };
 
@@ -84,17 +83,17 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
    * @param {*} property
    * @param {*} value
    */
-  const savePropierties = (property, value, storageType = "localStorage") => {
-    const localCache = getDataCache(storageType);
+  const savePropierties = (property, value) => {
+    const localCache = getDataCache();
     localCache[property] = value;
-    saveCache(localCache, storageType);
+    saveCache(localCache);
   };
 
   /**
    * Dada una propiedad, devuelve la información de la misma
    */
-  const getValueFromCache = (key = "", initial, storageType = "localStorage") => {
-    const localCache = getDataCache(storageType);
+  const getValueFromCache = (key = "", initial) => {
+    const localCache = getDataCache();
     return localCache[key] || initial;
   };
 
@@ -292,7 +291,7 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
    * @param {*} players
    * @returns
    */
-  const Gamers = (players = [], isOnline = false) => `<div class=cs ${inlineStyles({ width: "100%", margin: "30px 0"})}>${players.map((player, index) => `<div ${inlineStyles({width: "100%", display: "flex", "justify-content": "center", "flex-direction": "column", "align-items": "center", position: "relative", animation: `b-${!index ? "left" : "right"} 0.8s both`})} id=player-${index + 1}>${isOnline ? `<svg class="progress-ring" width="120" height="120" ${inlineStyles({position: "absolute", "z-index": 1, top: "11px", transform: "scale(0.7)"})}><circle class="progress-ring__circle" stroke="${METEOR_COLORS[player.color - 1]}" stroke-width="12" fill="transparent" r="52" cx="60" cy="60"/></svg><bubble class=cs></bubble>` : ""}${AvatarName({ name: player.name, styles: { "margin-bottom": "10px", "font-size": "18px", overflow: "hidden", "white-space": "nowrap", "text-overflow": "ellipsis", "text-align": "center", width: "120px"}})}${AvatarImage({image: player.image,styles: { width: "70px", height: "70px", "font-size": "3.5rem"}})}<div class=cs>${Meteor({style: { filter: setColorMeteor(player.color), width: "20px", height: "20px", position: "relative", "margin-top": "10px", animation: "cr 3s infinite linear"}})}<div class=score>0</div></div></div>`).join("")}</div>`;
+  const Gamers = (players = [], isOnline = false) => `<div class=cs ${inlineStyles({ width: "100%", margin: "30px 0"})}>${players.map((player, index) => `<div ${inlineStyles({width: "100%", display: "flex", "justify-content": "center", "flex-direction": "column", "align-items": "center", position: "relative", animation: `b-${!index ? "left" : "right"} 0.8s both`})} id=pl-${index + 1}>${isOnline ? `<svg class="p-r" width="120" height="120" ${inlineStyles({position: "absolute", "z-index": 1, top: "11px", transform: "scale(0.7)"})}><circle class="progress-ring__circle" stroke="${METEOR_COLORS[player.color - 1]}" stroke-width="12" fill="transparent" r="52" cx="60" cy="60"/></svg><bubble class=cs></bubble>` : ""}${AvatarName({ name: player.name, styles: { "margin-bottom": "10px", "font-size": "18px", overflow: "hidden", "white-space": "nowrap", "text-overflow": "ellipsis", "text-align": "center", width: "120px"}})}${AvatarImage({image: player.image,styles: { width: "70px", height: "70px", "font-size": "3.5rem"}})}<div class=cs>${Meteor({style: { filter: setColorMeteor(player.color), width: "20px", height: "20px", position: "relative", "margin-top": "10px", animation: "cr 3s infinite linear"}})}<div class=score>0</div></div></div>`).join("")}</div>`;
 
   /**
    * Renderiza el modal del juego
@@ -455,7 +454,7 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
      * @param {*} playerNumber
      */
     const showMessage = (type = "", value = 0, playerNumber = 1) => {
-      const bubble = $(`#player-${playerNumber} bubble`);
+      const bubble = $(`#pl-${playerNumber} bubble`);
       bubble.innerHTML = CHAT_MESSAGES[type][value];
       addClass(bubble, "show");
       addStyle(bubble, { "font-size": type === "msg" ? "14px" : "2em" });
@@ -472,7 +471,7 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
     const setLaunchTimer = (playerNumber = 1, startCounter = true) => {
       // Establecer el intervalo para el lanzamiento
       let counterTmp = 100;
-      const circle = $(`#player-${playerNumber} circle`);
+      const circle = $(`#pl-${playerNumber} circle`);
       const radius = circle.r.baseVal.value;
       const circumference = radius * 2 * Math.PI;
       circle.style.strokeDasharray = `${circumference} ${circumference}`;
@@ -574,11 +573,11 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
         );
 
         for (let i = 0; i <= meteorCounter; i++) {
-          addStyle($(`#m-${i}`), winningMeteorites.includes(i) ? { animation: `beat 2s ease-out infinite`, "z-index": 1 } : { opacity: ".5" });
+          addStyle($(`#m-${i}`), winningMeteorites.includes(i) ? { animation: `bt 2s ease-out infinite`, "z-index": 1 } : { opacity: ".5" });
         }
 
         PLAYER_DATA[playerHasTurn - 1].score += 1;
-        $(`#player-${playerHasTurn} .score`).innerHTML =
+        $(`#pl-${playerHasTurn} .score`).innerHTML =
           PLAYER_DATA[playerHasTurn - 1].score;
 
         showModal.show = true;
@@ -599,7 +598,7 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
               if (answer) {
                 // Enviar un socket para preguntar si se desea jugar de nuevo...
                 socket.emit("action", {
-                  type: "playAgain",
+                  type: "pA",
                   room: isOnline.room,
                   currentPlayer,
                 });
@@ -888,11 +887,10 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
     const showPlayerTurn = () => {
       document.documentElement.style.setProperty("--turn", METEOR_COLORS[PLAYER_DATA[playerHasTurn - 1].color - 1]);
       const opposite = playerHasTurn === 1 ? 2 : 1;
-      addClass($(`#player-${playerHasTurn} avatar-image`), "blink");
-      removeClass($(`#player-${opposite} avatar-image`), "blink");
+      addClass($(`#pl-${playerHasTurn} avimg`), "bl");
+      removeClass($(`#pl-${opposite} avimg`), "bl");
 
-      $("#turn").innerHTML =
-        playerHasTurn === 1 ? "You turn" : "Opponent's turn";
+      $("#turn").innerHTML = playerHasTurn === 1 ? "You turn" : "Opponent's turn";
 
       if (isBot && playerHasTurn === 2) {
         botTurn();
@@ -1031,7 +1029,7 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
     // Eventos para el chat
     if (!isOffline) {
       $on($("chat .button"), "click", () => {
-        $(".chat").classList.toggle("show");
+        $(".chat").classList.toggle("s");
       });
 
       $$(".chat button").forEach((btn) => {
@@ -1045,7 +1043,7 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
             value,
           });
 
-          removeClass($(".chat"), "show");
+          removeClass($(".chat"), "s");
         });
       });
     }
@@ -1111,7 +1109,7 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
             selectedColumn(data.index, data.color);
           }
 
-          if (type === "playAgain") {
+          if (type === "pA") {
             playSound.stop();
             Modal.show({
               icon: "😃",
@@ -1120,7 +1118,7 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
                 if (answer) {
                   // Se reinicia el juego y se le manda un socket indicando que se acepta
                   socket.emit("action", {
-                    type: "accept",
+                    type: "at",
                     room: isOnline.room,
                     currentPlayer,
                   });
@@ -1133,7 +1131,7 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
             });
           }
 
-          if (type === "accept") {
+          if (type === "at") {
             // Se cierra el modal que se tenga abierto...
             Modal.hide();
             resetGame();
@@ -1145,7 +1143,7 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
         }
       });
 
-      socket.on("playerDisconnect", () => {
+      socket.on("pD", () => {
         clearIntervals();
         disconnectSocket();
         Screen();
@@ -1163,40 +1161,20 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
     showPlayerTurn();
   };
 
-  const ButtonBack = () => `<button id=back  ${inlineStyles({
-      position: "absolute",
-      left: "5%",
-      top: "3%",
-      "font-size": "2em",
-      background: "no-repeat",
-      color: "white",
-      border: 0,
-      cursor: "pointer",
-      "font-weight": "bold",
-      ...style,
-    })}>⬅️</button>`;
+  const ButtonBack = () => `<button id=back>⬅️</button>`;
 
   /**
    * Renderizará la pantalla de selección de dificultad en modo Bot
    */
   const Difficulty = () => {
-    setHtml($("#render"), `<div class='cs' ${inlineStyles({ "flex-direction": "column" })}>${ButtonBack()}${Logo()}<h2 ${inlineStyles({margin: "30px 0","text-align": "center","text-transform": "uppercase"})}>CHOOSE DIFFICULTY</h2>${["Easy", "Medium", "Hard"].map((v, i) =>`<button class=button id=${v.toLowerCase()} ${inlineStyles({width: "150px","margin-bottom": "20px", "animation": `bIn ${(i * 0.5) + 0.5}s both`})}>${v}</button>`).join("")}</div>`);
-
-    $$(".button").forEach((btn) => {
-      $on(btn, "click", (e) => {
-        Screen("Game", { isBot: e.target.id });
-      });
-    });
-
+    setHtml($("#render"), `<div class='cs' ${inlineStyles({ "flex-direction": "column" })}>${ButtonBack()}${Logo()}<h2 ${inlineStyles({margin: "30px 0","text-align": "center","text-transform": "uppercase"})}>CHOOSE DIFFICULTY</h2>${["Easy", "Medium", "Hard"].map((v, i) =>`<button class=button id=${v.toLowerCase()} ${inlineStyles({width: "150px","margin-bottom": "20px", "animation": `bI ${(i * 0.5) + 0.5}s both`})}>${v}</button>`).join("")}</div>`);
+    $$(".button").forEach((btn) => $on(btn, "click", (e) => Screen("Game", { isBot: e.target.id })));
     $on($("#back"), "click", () => Screen());
   };
 
   const Logo = () => `<h1 class=logo>Space4</h1>`;
-
-  const AvatarImage = ({ image = "", styles = {} }) => `<avatar-image ${inlineStyles(styles)}>${image}</avatar-image>`;
-
-  const AvatarName = ({ name = "", edit = false, styles = {} }) => `<avatar-name ${inlineStyles(styles)}>${edit ? `<a href="#">${name}</a>` : name}</avatar-name>`;
-
+  const AvatarImage = ({ image = "", styles = {} }) => `<avimg ${inlineStyles(styles)}>${image}</avimg>`;
+  const AvatarName = ({ name = "", edit = false, styles = {} }) => `<avname ${inlineStyles(styles)}>${edit ? `<a href="#">${name}</a>` : name}</avname>`;
 
   /**
    * Renderiza el avatar de un jugador y su nombre
@@ -1243,7 +1221,6 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
 
   const PlayFriends = () => {
     setHtml($("#render"), `<div class=cs ${inlineStyles({ "flex-direction": "column", width: "100%", "z-index": 5})}>${ButtonBack()}${Logo()}${[{legend: "Please enter the five room code",html: `<form><input type="tel" id="code" autocomplete="off"><button type="submit" class=button>JOIN</button></form>`},{legend: "Create a private room",html: `<button class=button>CREATE</button>`}].map((v, i) => `<div id=f-${i} ${inlineStyles({width: "80%"})}><fieldset class=cs><legend>${v.legend}</legend>${v.html}</fieldset></div>${i === 0 ? "<h2>OR</h2>" : ""}`).join("")}</div>`);
-
     $on($("#back"), "click", () => Screen());
     // Para los eventos...
     $on($("form"), "submit", (e) => {
@@ -1280,7 +1257,7 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
    */
   const Lobby = () => {
     const currentPlayer = getPlayer();
-    setHtml($("#render"), `<div class=cs ${inlineStyles({"flex-direction": "column","z-index": 5})}>${ButtonShare()}${ButtonSounds()}${Logo()}${Avatar({ name: currentPlayer.name, avatar: {image: AVATARS[currentPlayer.avatar], index: currentPlayer.avatar}, stylesName: { "margin-top": "15px", "font-weight": "bold", "font-size": "25px"}, edit: true})}<div class='cs options' ${inlineStyles({ "flex-direction": "column", "margin-top": "25px"})}>${[["Two Players", "two"], ["Vs Bot", "bot"], ["Play with friends", "friend"], ["Play Online", "online"]].map((v, i) => `<button class=button id=${v[1]} ${inlineStyles({ width: "260px", "margin-bottom": "20px", "animation": `bIn ${(i * 0.5) + 0.5}s both`})}>${v[0]}</button>`).join("")}</div><a id="about" ${inlineStyles({color: "white", "z-index": 2, "font-size": "20px"})} href="#">About</a></div>`);
+    setHtml($("#render"), `<div class=cs ${inlineStyles({"flex-direction": "column","z-index": 5})}>${ButtonShare()}${ButtonSounds()}${Logo()}${Avatar({ name: currentPlayer.name, avatar: {image: AVATARS[currentPlayer.avatar], index: currentPlayer.avatar}, stylesName: { "margin-top": "15px", "font-weight": "bold", "font-size": "25px"}, edit: true})}<div class='cs options' ${inlineStyles({ "flex-direction": "column", "margin-top": "25px"})}>${[["Two Players", "two"], ["Vs Bot", "bot"], ["Play with friends", "friend"], ["Play Online", "online"]].map((v, i) => `<button class=button id=${v[1]} ${inlineStyles({ width: "260px", "margin-bottom": "20px", "animation": `bI ${(i * 0.5) + 0.5}s both`})}>${v[0]}</button>`).join("")}</div><a id="about" ${inlineStyles({color: "white", "z-index": 2, "font-size": "20px"})} href="#">About</a></div>`);
 
     // Para el evento del about
     $on($("#about"), "click", (e) => {
@@ -1303,18 +1280,18 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
 
     // Para los eventos dek avatar
     $on($(".avatars"), "change", (e) => {
-      setHtml($("avatar-image"), AVATARS[e.target.value]);
+      setHtml($("avimg"), AVATARS[e.target.value]);
       savePropierties("avatar", +e.target.value);
     });
 
-    $on($("avatar-name a"), "click", (e) => {
+    $on($("avname a"), "click", (e) => {
       e.preventDefault();
       const newName = sanizateTags(prompt("Write your name (MAX 10)", getValueFromCache("name", "")));
 
       if (newName) {
         const shortName = newName.length > 10 ? newName.substring(0, 10) + "..." : newName;
 
-        $("avatar-name a").textContent = shortName;
+        $("avname a").textContent = shortName;
         savePropierties("name", shortName);
       }
     });
@@ -1329,19 +1306,12 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
    * @param {*} params
    */
   const Screen = (screen = "Lobby", params = {}) => {
-    const Handler = {
-      Lobby,
-      Game,
-      Difficulty,
-      SearchOpponent,
-      PlayFriends,
-    };
-
+    const Handler = { Lobby, Game, Difficulty, SearchOpponent, PlayFriends };
     playSound.stop();
     Handler[screen](params);
 
     // Ocultar el meteoro global en la pantalla del juego
-    addStyle($("#m-global"), { top: screen === "Game" ? `${BASE_HEIGHT}px` : `${BASE_HEIGHT - BASE_WIDTH * 0.4}px`,
+    addStyle($("#m-g"), { top: screen === "Game" ? `${BASE_HEIGHT}px` : `${BASE_HEIGHT - BASE_WIDTH * 0.4}px`,
     });
   };
 
@@ -1352,7 +1322,7 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
   $("head").appendChild(style);
 
   // Renderizar la base del juego...
-  setHtml($("#root"), `${Modal.render()}<div id="render" class="wh cs"></div>${new Array(3).fill(null).map((_, i) => `<div class='star-${i}'></div>`).join("")}${Meteor({id: "m-global",style: {width: `${BASE_WIDTH}px`, height: `${BASE_WIDTH}px`, top: `${BASE_HEIGHT - BASE_WIDTH * 0.4}px`, "z-index": 1, animation: "cr 60s infinite linear"}})}`);
+  setHtml($("#root"), `${Modal.render()}<div id="render" class="wh cs"></div>${new Array(3).fill(null).map((_, i) => `<div class='star-${i}'></div>`).join("")}${Meteor({id: "m-g",style: {width: `${BASE_WIDTH}px`, height: `${BASE_WIDTH}px`, top: `${BASE_HEIGHT - BASE_WIDTH * 0.4}px`, "z-index": 1, animation: "cr 60s infinite linear"}})}`);
 
   Modal.events();
 
@@ -1378,7 +1348,7 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
 
     // Envia la data del usuario actual al server y busca un jugador
     socket.on("connect", () => {
-      socket.emit("newUser", { ...options, player: getPlayer() }, (error) => {
+      socket.emit("nU", { ...options, player: getPlayer() }, (error) => {
         if (error) {
           Screen("PlayFriends");
           disconnectSocket();
@@ -1405,7 +1375,7 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
       });
     });
 
-    socket.on("startGame", (data) => {
+    socket.on("sG", (data) => {
       const currentPlayer = data.p1.token === getPlayer().token ? "p1" : "p2";
 
       Screen("Game", {

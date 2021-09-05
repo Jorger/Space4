@@ -1,6 +1,10 @@
 :root {
-  --black: black;
-  --buble: polygon(0% 0%, 100% 0%, 99% 95%, 68% 94%, 61% 100%, 54% 95%, 0 95%);
+  --b: #000;
+  --pa: polygon(0% 0%, 100% 0%, 99% 95%, 68% 94%, 61% 100%, 54% 95%, 0 95%);
+  --p : #ff2d95;
+  --c : #675c60;
+  --o : rgba(255, 255, 255, 0);
+  --i : #fff;
 }
 
 /* Estilos globales */
@@ -11,8 +15,8 @@
 
 html,
 body {
-  background: var(--black);
-  color: white;
+  background: var(--b);
+  color: var(--i);
   font-family: Arial;
   overflow: hidden;
   position: fixed;
@@ -46,12 +50,12 @@ div {
 }
 
 a {
-  color: black;
+  color: var(--b);
   font-weight: bold;
 }
 
 a:visited {
-  color: black;
+  color: var(--b);
 }
 
 @keyframes aS {
@@ -59,7 +63,7 @@ a:visited {
   to { transform: translateY(-150px); }
 }
 
-@keyframes beat {
+@keyframes bt {
   0% { transform: scale(0.8); }
   14% { transform: scale(1.5); }
   28% { transform: scale(0.8); }
@@ -72,7 +76,7 @@ a:visited {
   to { transform: translateY(-90%); }
 }
 
-@keyframes bIn {
+@keyframes bI {
   from, 20%, 40%, 60%, 80%, to { animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1); }
   0% { opacity: 0; transform: scale3d(0.3, 0.3, 0.3);}
   20% { transform: scale3d(1.1, 1.1, 1.1); }
@@ -82,7 +86,7 @@ a:visited {
   to { opacity: 1; transform: scale3d(1, 1, 1); }
 }
 
-@keyframes bDown {
+@keyframes bD {
   0% { transform: translateY(-1200px) scale(0.7); opacity: 0.7; }
   80% { transform: translateY(0px) scale(0.7); opacity: 0.7; }
   100% { transform: scale(1); opacity: 1; }
@@ -96,7 +100,7 @@ a:visited {
   font-size: 1rem;
   line-height: 3rem;
   text-decoration: none;
-  color: white;
+  color: var(--i);
   text-transform: uppercase;
   letter-spacing: 2px;
   -webkit-font-smoothing: antialiased;
@@ -119,11 +123,7 @@ a:visited {
   bottom: 2px;
   left: 2px;
   border-radius: 30px;
-  background-image: linear-gradient(
-    170deg,
-    rgba(255, 255, 255, 0.3),
-    rgba(255, 255, 255, 0)
-  );
+  background-image: linear-gradient(170deg,rgba(255, 255, 255, 0.3), var(--o));
   pointer-events: none;
 }
 
@@ -135,19 +135,15 @@ meteor {
   border-radius: 100%;
   overflow: hidden;
   background: #bbacb0;
-  background-image: radial-gradient(
-      circle,
-      #675c60 18%,
-      rgba(255, 255, 255, 0) 19%
-    ),
-    radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),
-    radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),
-    radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),
-    radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),
-    radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),
-    radial-gradient(circle, #675c60 18%, rgba(255, 255, 255, 0) 19%),
-    radial-gradient(circle, #81767a 60%, rgba(255, 255, 255, 0) 61%),
-    radial-gradient(circle, #938c8f 60%, rgba(255, 255, 255, 0) 61%);
+  background-image: radial-gradient(circle, var(--c) 18%, var(--o) 19%),
+    radial-gradient(circle, var(--c) 18%, var(--o) 19%),
+    radial-gradient(circle, var(--c) 18%, var(--o) 19%),
+    radial-gradient(circle, var(--c) 18%, var(--o) 19%),
+    radial-gradient(circle, var(--c) 18%, var(--o) 19%),
+    radial-gradient(circle, var(--c) 18%, var(--o) 19%),
+    radial-gradient(circle, var(--c) 18%, var(--o) 19%),
+    radial-gradient(circle, #81767a 60%, var(--o) 61%),
+    radial-gradient(circle, #938c8f 60%, var(--o) 61%);
   background-repeat: no-repeat;
   background-size: 89% 85%, 60% 60%, 30% 30%, 15% 15%, 15% 15%, 15% 15%, 23% 23%,
     120% 120%, 120% 120%;
@@ -155,7 +151,7 @@ meteor {
     30% 77%, -60% 53%, 0 53%;
 }
 
-#m-global {
+#m-g {
   transition: top 0.5s cubic-bezier(0.86, -0.02, 0.45, 1.35);
 }
 
@@ -168,7 +164,7 @@ meteor {
 /* Estilos para el board */
 board {
   position: relative;
-  animation: bIn 0.5s both;
+  animation: bI 0.5s both;
 }
 
 holes {
@@ -193,7 +189,7 @@ board > meteor {
 /* Fin estilos board */
 
 /* Para los estilos del avatar */
-.progress-ring__circle {
+.p-r {
   transition: 0.35s stroke-dashoffset;
   transform: rotate(-90deg);
   transform-origin: 50% 50%;
@@ -204,12 +200,12 @@ avatar {
   position: relative;
 }
 
-avatar-image,
+avimg,
 .avs {
   background: #bbacb0;
   border-radius: 50%;
-  border: 5px solid white;
-  box-shadow: 1px -1px 19px 1px white;
+  border: 5px solid var(--i);
+  box-shadow: 1px -1px 19px 1px var(--i);
   font-size: 5rem;
   height: 100px;
   overflow: hidden;
@@ -217,8 +213,8 @@ avatar-image,
   width: 100px;
 }
 
-avatar-image.blink {
-  animation: blink 1s linear infinite;
+avimg.bl {
+  animation: bl 1s linear infinite;
 }
 
 .avatars {
@@ -232,8 +228,8 @@ avatar-image.blink {
   border-width: 2px;
 }
 
-avatar-name a {
-  color: white;
+avname a {
+  color: var(--i);
 }
 
 .score {
@@ -243,7 +239,7 @@ avatar-name a {
   margin-top: 10px;
 }
 
-@keyframes blink {
+@keyframes bl {
   25% { box-shadow: 0 0 30px 11px var(--turn); }
   75% { box-shadow: 0 0 0 transparent; }
 }
@@ -253,11 +249,11 @@ avatar-name a {
 /* Estilos para el logo */
 .logo {
   font-size: 60px;
-  text-shadow: #fff 0px 0px 5px, #fff 0px 0px 10px, #fff 0px 0px 15px,
-    #ff2d95 0px 0px 20px, #ff2d95 0px 0px 30px, #ff2d95 0px 0px 40px,
-    #ff2d95 0px 0px 50px, #ff2d95 0px 0px 75px;
+  text-shadow: var(--i) 0px 0px 5px, var(--i) 0px 0px 10px, var(--i) 0px 0px 15px,
+    var(--p) 0px 0px 20px, var(--p) 0px 0px 30px, var(--p) 0px 0px 40px,
+    var(--p) 0px 0px 50px, var(--p) 0px 0px 75px;
   margin-bottom: 30px;
-  animation: bDown 0.5s both;
+  animation: bD 0.5s both;
 }
 /* fin de los estilos del logo */
 
@@ -299,7 +295,7 @@ modal.show {
   border-radius: 5px;
   overflow: hidden;
   width: 71%;
-  background: white;
+  background: var(--i);
   overflow: hidden;
 }
 
@@ -315,7 +311,7 @@ modal.show {
   height: 50px;
   background: #fc7169;
   cursor: pointer;
-  color: white;
+  color: var(--i);
   text-transform: uppercase;
   font-weight: bold;
 }
@@ -325,14 +321,14 @@ modal.show {
 }
 
 modal.show .mc {
-  animation: fDown 200ms both;
+  animation: fD 200ms both;
 }
 
 modal.hide .mc {
   animation: fUp 200ms both;
 }
 
-@keyframes fDown {
+@keyframes fD {
   from { opacity: 0; transform: translate3d(0, -100%, 0); }
   to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
@@ -348,7 +344,7 @@ modal.hide .mc {
 .chat {
   display: none;
   position: absolute;
-  clip-path: var(--buble);
+  clip-path: var(--pa);
   width: 280px;
   height: 280px;
   top: -281px;
@@ -358,7 +354,7 @@ modal.hide .mc {
   z-index: 1;
 }
 
-.chat.show {
+.chat.s {
   display: block;
 }
 
@@ -384,7 +380,7 @@ modal.hide .mc {
   font-size: 10px;
   margin-bottom: 5px;
   padding: 7px;
-  color: white;
+  color: var(--i);
   border-radius: 10px;
   background: #016e59;
 }
@@ -398,7 +394,7 @@ modal.hide .mc {
 bubble {
   visibility: hidden;
   position: absolute;
-  background: white;
+  background: var(--i);
   color: gray;
   font-family: Arial;
   font-weight: bold;
@@ -425,7 +421,7 @@ bubble:after {
   width: 0;
   z-index: 1;
   border-style: solid;
-  border-color: white transparent;
+  border-color: var(--i) transparent;
   border-width: 0 14px 10px;
   top: -10px;
   left: 50%;
@@ -442,7 +438,7 @@ fieldset {
   border: 1px solid rgba(255, 255, 255, 0.18);
   padding: 20px;
   margin: 30px 0;
-  animation: bIn 1s both;
+  animation: bI 1s both;
 }
 
 fieldset form {
@@ -457,7 +453,7 @@ fieldset #code {
   width: 60%;
 }
 
-#sounds, #sh {
+#sounds, #sh, #back {
   background: none;
   border: none;
   cursor: pointer;
@@ -467,6 +463,6 @@ fieldset #code {
   top: 3%;
 }
 
-#sh {
+#sh, #back {
   left: 5%;
 }

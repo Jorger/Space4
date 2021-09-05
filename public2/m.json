@@ -1,0 +1,10 @@
+{
+  "short_name": "Space4",
+  "name": "Space4",
+  "icons": [{ "src": "icon.png", "type": "image/png", "sizes": "144x144" }],
+  "start_url": "./index.html",
+  "display": "standalone",
+  "theme_color": "#10151d",
+  "background_color": "#10151d",
+  "orientation": "portrait"
+}

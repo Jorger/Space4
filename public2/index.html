@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta name="theme-color" content="#10151d" />
+    <link rel="icon" type="image/png" href="/icon.png" />
+    <link rel="manifest" href="/m.json" />
+    <title>Space4</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="cs wh">
+    <div id="root"></div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/shared.js"></script>
+    <script src="/client.js"></script>
+    <script>"serviceWorker"in navigator?navigator.serviceWorker.register("serviceworker.js").then(function(){console.log("SW successfully")}).catch(function(){console.log("SW failed")}):console.log("SW not found");</script>
+  </body>
+</html>
