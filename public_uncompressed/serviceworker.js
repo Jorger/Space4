@@ -1,19 +1,19 @@
-var version = 'v1.1';
-self.addEventListener('install', (event) => {
+var version = "v1.1";
+self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(version).then((cache) => {
       return cache.addAll([
-        'index.html',
-        'client.js',
-        'icon.png',
-        'shared.js',
-        'socket.io/socket.io.js',
+        "index.html",
+        "client.js",
+        "icon.png",
+        "shared.js",
+        "socket.io/socket.io.js",
       ]);
     })
   );
 });
 
-self.addEventListener('activate', (event) => {
+self.addEventListener("activate", (event) => {
   self.clients
     .matchAll({
       includeUncontrolled: true,
@@ -41,10 +41,10 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-self.addEventListener('fetch', (event) => {
+self.addEventListener("fetch", (event) => {
   if (
-    event.request.cache === 'only-if-cached' &&
-    event.request.mode !== 'same-origin'
+    event.request.cache === "only-if-cached" &&
+    event.request.mode !== "same-origin"
   )
     return;
   event.respondWith(
@@ -54,8 +54,8 @@ self.addEventListener('fetch', (event) => {
         fetch(event.request).then((response) => {
           return caches.open(version).then((cache) => {
             if (
-              event.request.method !== 'POST' &&
-              !event.request.url.includes('socket.io')
+              event.request.method !== "POST" &&
+              !event.request.url.includes("socket.io")
             ) {
               try {
                 cache.put(event.request, response.clone());
