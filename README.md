@@ -1,6 +1,6 @@
 # 🚀 Space4
 
-Space4 es un juego realizado para la edición 2021 de la [JS13k](https://js13kgames.com/), cuyo tema fue [SPACE](https://medium.com/js13kgames/js13kgames-2021-has-started-aa9345fd9fdf).
+Space4 es un juego realizado para la edición 2021 de la [JS13k](https://js13kgames.com/), cuyo tema es [SPACE](https://medium.com/js13kgames/js13kgames-2021-has-started-aa9345fd9fdf).
 
 En está competencia existe la categoría de [server](https://github.com/js13kGames/js13kserver), en la cual se entrega un proyecto el cual ya tiene configurado lo necesario para establecer una conexión en tiempo real, en este caso haciedo uso de la popular librería conocida como [socket.io](https://socket.io/), 
 la idea es que el juego comprimido en un acrhivo .zip no supere los 13KB, para este juego el archivo que contiene todo el juego y que pesa 13 KB, es el denominado [dist.zip](https://github.com/Jorger/Space4/blob/main/dist.zip), los archivos comprimidos está ubicados en la carpeta [public](https://github.com/Jorger/Space4/tree/main/public), 
@@ -13,6 +13,8 @@ de la misma forma los archivos no comprimidos del juego se encuetran en la carpe
 * Cuando hay cuatro meteoros del mismo color seguidas, ese jugador gana!
 
 ## 🎮 Modalidades de Juego.
+
+https://user-images.githubusercontent.com/30050/132251551-adf63d32-32f9-4c0c-84ae-928308ea36b9.mov
 
 El juego cuenta con dos tipos de modalidades como son:
 
@@ -36,6 +38,8 @@ En está modalidad toda la actividad del juego se lleva a cabo en el mismo dispo
 En esta modalidad la partida se llevará a cabo en el mismo dispositivo.
 
 ### 🤖 vs Bot
+
+https://user-images.githubusercontent.com/30050/132251813-7c1fe309-de4a-44fb-887f-cae6e4baf36b.mov
 
 En esta modalidad se competirá vs un bot, es una modalidad que también sirve como práctica, a la vez se cuenta con tres modos de dificultad.
 
