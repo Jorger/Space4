@@ -37,6 +37,58 @@ En esta modalidad la partida se llevará a cabo en el mismo dispositivo.
 
 ### 🤖 vs Bot
 
-En esta modalides se competirá vs un bot, es una modalidad que también sirve como práctica, a la vez se cuenta con tres modos de dificultad.
+En esta modalidad se competirá vs un bot, es una modalidad que también sirve como práctica, a la vez se cuenta con tres modos de dificultad.
+
+## 2️⃣ Online.
+
+Está modalidad requiere conexión a internet, ya que se hará uso de [websockets](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API), se tienen las siguientes opciones:
+
+### 🌎 Play Online
+
+Esta modalidad nos permitirá inciar una partida con cualquier jugador que este conectado, se podría intepretar como una partida aleatoria, ya que se creará una sala con aquella persona que este disponible en ese momento, en esta partida además se encuenta con la opción de tener un "chat" a través de emojis, para así darle un toque social al juego, cada uno usuario tiene 15 segundos para realizar su movimiento, si no lo hace en este lapso de tiempo se hará un lanzamiento aleatorio.
+
+### 🤝 Play with friends
+
+Es una extensión de la modalidad anterior, pero en este caso se creará una sala privada, es decir, sólo aquellos usuarios que tengan el código de la sala podrán jugar la partida, 
+se aplican las mismas funcionalidades de la modalidad anterior, contando con el mismo tiempo de lanzamiento y la capacidad de interactuar por medio de emojis.
+
+## 🏃‍♂️ Ejecución.
+
+Este proyecto es un fork del [proyecto original](https://github.com/js13kGames/js13kserver) creado para está categoría, en este caso se requiere de NodeJS.
+
+### Instalación de dependencias.
+
+```
+npm i
+```
+
+### Ejecución del proyecto
+
+```
+npm run start:dev
+```
+
+En este caso se el proyecto correrá en http://localhost:3000/
+
+**Nota:**
+
+Se recomiendo renombrar la carpeta `public_uncompressed` a `public` y ésta última ponerle otro nombre, para así ver los archivos sin compresión.
 
 
+## 📦 Compresión de archivos.
+
+Se utilizarán los siguientes herramientas para comprimir los archivos:
+
+* https://xem.github.io/terser-online/
+* https://csscompressor.com/
+* https://tinypng.com/
+* https://javascript-minifier.com/
+
+## 🔈 Sonidos.
+
+Para los sonidos se uzó la librería [ZzFX](https://github.com/KilledByAPixel/ZzFX), la cual es una de las recomendadas entre los [recursos](https://js13kgames.github.io/resources/) de la competencia
+
+# 👨🏻‍💻 Autor
+
+* Jorge Rubaino 
+[@ostjh](https://twitter.com/ostjh)
