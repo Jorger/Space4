@@ -8,6 +8,8 @@ de la misma forma los archivos no comprimidos del juego se encuetran en la carpe
 
 ## 📖 Reglas.
 
+![rules](https://user-images.githubusercontent.com/30050/132253862-68a2c735-48ca-4069-89b4-c993cfc0c512.png)
+
 * En un turno, un jugador toca una columna para dejar caer un "meteoro".
 * Los jugadores se turnan para colocar meteoros hasta que cada jugador obtenga cuatro de sus meteoros en una fila, columna o diagonal.
 * Cuando hay cuatro meteoros del mismo color seguidas, ese jugador gana!
