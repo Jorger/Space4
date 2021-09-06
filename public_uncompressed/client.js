@@ -833,8 +833,7 @@ let zzfx,zzfxV,zzfxX,zzfxR;zzfxV=.3,zzfx=((z=1,t=.05,f=220,x=0,a=0,e=.1,n=0,h=1,
         left: `${BASE_POSITION + METEOR_SIZE * index}px`,
         top: `${(METEOR_SIZE + BASE_POSITION) * -1}px`,
         filter: setColorMeteor(color),
-        visibility: "visible",
-        animation: "cr 5s infinite linear",
+        visibility: "visible"
       });
 
       // Interrupción para indicar la posición de llegada
