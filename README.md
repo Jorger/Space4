@@ -49,12 +49,21 @@ Está modalidad requiere conexión a internet, ya que se hará uso de [websocket
 
 ### 🌎 Play Online
 
-Esta modalidad nos permitirá inciar una partida con cualquier jugador que este conectado, se podría intepretar como una partida aleatoria, ya que se creará una sala con aquella persona que este disponible en ese momento, en esta partida además se encuenta con la opción de tener un "chat" a través de emojis, para así darle un toque social al juego, cada uno usuario tiene 15 segundos para realizar su movimiento, si no lo hace en este lapso de tiempo se hará un lanzamiento aleatorio.
+
+![online](https://user-images.githubusercontent.com/30050/132252445-30e41cbc-3770-4700-bf27-b27b9de5e791.gif)
+
+Esta modalidad nos permitirá inciar una partida con cualquier jugador que este conectado, se podría intepretar como una partida aleatoria, ya que se creará una sala con aquella persona que este disponible en ese momento, en esta partida además se encuenta con la opción de tener un "chat", para así darle un toque social al juego, cada uno usuario tiene 15 segundos para realizar su movimiento, si no lo hace en este lapso de tiempo se hará un lanzamiento aleatorio.
+
 
 ### 🤝 Play with friends
 
+![friends](https://user-images.githubusercontent.com/30050/132252679-054f326c-74b3-4abe-bb82-23d921fb9429.gif)
+
+
 Es una extensión de la modalidad anterior, pero en este caso se creará una sala privada, es decir, sólo aquellos usuarios que tengan el código de la sala podrán jugar la partida, 
 se aplican las mismas funcionalidades de la modalidad anterior, contando con el mismo tiempo de lanzamiento y la capacidad de interactuar por medio de emojis.
+
+En dispositivos móviles (y en algunos browsers en desktop) el usuario podrá usar la opción de [share nativa](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/share), para compartir la url de la sala.
 
 ## 🏃‍♂️ Ejecución.
 
