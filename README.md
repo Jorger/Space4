@@ -105,5 +105,5 @@ Para los sonidos se uzó la librería [ZzFX](https://github.com/KilledByAPixel/Z
 
 # 👨🏻‍💻 Autor
 
-* Jorge Rubaino 
+* Jorge Rubiano 
 [@ostjh](https://twitter.com/ostjh)
